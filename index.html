@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Metamask Wallet Connection</title>
+</head>
+<body>
+  <button id="connectButton">Connect Wallet</button>
+
+  <script>
+    // Establish a WebSocket connection with the Node.js server
+    const socket = new WebSocket('ws://localhost:3000');
+
+    // Button click event
+    const connectButton = document.getElementById('connectButton');
+    connectButton.addEventListener('click', () => {
+      // Send a message to the server
+      socket.send('connect_wallet');
+    });
+
+    // Message received event
+    socket.addEventListener('message', (event) => {
+      console.log('Received message:', event.data);
+
+      // Handle the response from the server here
+    });
+
+    // Connection closed event
+    socket.addEventListener('close', () => {
+      console.log('Connection closed.');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Connect Metamask Wallet</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+	<div class="container">
+		<h1>
+			<%= pageTitle %>! Version web
+		</h1>
+		<p>Buy coins with VISA</p>
+		<button id="connectButton" class="btn btn-warning btn-block">Connect Wallet</button>
+		<span id="addressWallet"></span>
+
+		<div class="mt-3 d-none" id="areaInfoToken">
+			<div class="mb-1">
+				<button class="btn btn-primary" id="tokenBalanceButton">Balances</button>
+				<span id="tokenBalanceShow"></span>
+			</div>
+			<div class="mb-1">
+				<button class="btn btn-primary" id="tokenNameButton">Token name</button>
+				<span id="tokenNameShow"></span>
+			</div>
+			<div class="mb-1">
+				<button class="btn btn-primary" id="tokenSymbolButton">Token symbols</button>
+				<span id="tokenSymbolShow"></span>
+			</div>
+			<div class="row mt-3">
+				<div class="col-3"></div>
+				<div class="col-6">
+					<form>
+						<h4>Buy TRT Token with Visa card</h4>
+						<div class="mb-3">
+						  <label for="" class="form-label">Card informantion</label>
+						  <input required placeholder="4242 4242 4242 4242" maxlength="16" type="number" class="form-control" id="formNumberPayment">
+						</div>
+						<div class="mb-3">
+							<div class="row">
+								<div class="col-6"><input placeholder="MM/YY" type="text" class="form-control" id=""></div>
+								<div class="col-6"><input placeholder="CVC" type="number" class="form-control" id=""></div>
+							</div>
+						</div>
+						<div class="mb-3">
+							<label for="" class="form-label">Amount (1 TRT token = 1$)</label>
+							<div class="input-group mb-3">
+								<span class="input-group-text">$</span>
+								<input type="number" class="form-control" id="formAmountPayment">
+							</div>
+						</div>
+						<div class="mb-3">
+							<label for="" class="form-label">Buy TRT token for address wallet:</label>
+							<input disabled placeholder="" type="" class="form-control" id="inputAddressWallet">
+						</div>
+						<div>
+							<button class="btn btn-primary" type="button" id="btnBuyToken">Buy</button>
+							<img width="25%" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0GLJh19sn6AVFEV_iv3YGW2_-xLz5p2IekA&usqp=CAU" alt="">
+						</div>
+					</form>
+				</div>
+				<div class="col-3"></div>
+			</div>
+		</div>
+
+	</div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> <!-- Include Axios library -->
+	<script>
+		// Init - Check connected wallet
+		let addressAccount = '';
+		window.ethereum.request({ method: 'eth_accounts' })
+			.then((accounts) => {
+				if (accounts != '') {
+					document.getElementById('connectButton').disabled = true; // disable button when connect metamask done
+					document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts}`; // Add address wallet to element
+					document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
+					document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+					addressAccount = accounts;
+				}
+			})
+			.catch((error) => {
+				console.log('Error');
+			});
+
+
+		// Button click event (Connect wallet)
+		const connectButton = document.getElementById('connectButton');
+		connectButton.addEventListener('click', () => {
+			// Check if Metamask is installed
+			if (typeof window.ethereum !== 'undefined') {
+				// Request Metamask to connect
+				window.ethereum.request({ method: 'eth_requestAccounts' })
+					.then((accounts) => {
+						const selectedAddress = accounts[0];
+						console.log('Connected to wallet:', selectedAddress);
+						// Add your wallet connection logic here
+						document.getElementById('connectButton').disabled = true; // disable button when connect metamask done
+						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${selectedAddress}`; // Add address wallet to element
+						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
+						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+						addressAccount = accounts;
+					})
+					.catch((error) => {
+						console.log('Error connecting to wallet:', error);
+						// Handle the connection error here
+					});
+			} else {
+				console.log('Metamask not installed.');
+				// Handle the case where Metamask is not installed
+			}
+		});
+
+		// Button click event (get token name)
+		const tokenBalanceButton = document.getElementById('tokenBalanceButton');
+		tokenBalanceButton.addEventListener('click', () => {
+			axios.get(`http://localhost:3000/balance-of?address=${addressAccount}`)
+				.then(response => {
+					const data = response.data;
+					document.getElementById('tokenBalanceShow').innerHTML = data.balanceOf;
+				})
+				.catch(error => {
+					console.error(error);
+				});
+			
+		});
+
+		// Button click event (get token name)
+		const getTokenNameButton = document.getElementById('tokenNameButton');
+		getTokenNameButton.addEventListener('click', () => {
+			axios.get('http://localhost:3000/name')
+				.then(response => {
+					const data = response.data;
+					document.getElementById('tokenNameShow').innerHTML = data.name;
+				})
+				.catch(error => {
+					console.error(error);
+				});
+			
+		});
+
+		// Button click event (get token symbol)
+		const getTokenSymbolButton = document.getElementById('tokenSymbolButton');
+		getTokenSymbolButton.addEventListener('click', () => {
+			axios.get('http://localhost:3000/symbol')
+				.then(response => {
+					const data = response.data;
+					document.getElementById('tokenSymbolShow').innerHTML = data.symbol;
+				})
+				.catch(error => {
+					console.error(error);
+				});
+			
+		});
+
+		// Button click event (buy token)
+		const btnBuyToken = document.getElementById('btnBuyToken');
+		btnBuyToken.addEventListener('click', () => {
+			const params = {
+				number: document.getElementById('formNumberPayment').value,
+				amount: document.getElementById('formAmountPayment').value,
+				addressWallet: addressAccount
+			};
+
+			if (params.number == '') {
+				alert('Card nummber require input');
+				return false;
+			}
+			if (params.amount == '') {
+				alert('Amount require input');
+				return false;
+			}
+
+			axios.post('http://localhost:3000/payment-coin', params)
+				.then(response => {
+					const data = response.data;
+					alert('Success payment, check your wallet');
+				})
+				.catch(error => {
+					console.error(error);
+				});
+		});
+
+	</script>
+</body>
+
+</html>
