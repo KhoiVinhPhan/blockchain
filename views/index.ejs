@@ -5,6 +5,18 @@
 	<title>Connect Metamask Wallet</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
 		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+	<script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+	<script>
+		// Enable pusher logging - don't include this in production
+		Pusher.logToConsole = true;
+		var pusher = new Pusher('cf2d8ddd49b9307e093e', {
+			cluster: 'ap1'
+		});
+		var channel = pusher.subscribe('my-channel');
+		channel.bind('my-event', function (data) {
+			console.log(JSON.stringify(data));
+		});
+	</script>
 </head>
 
 <body>
@@ -16,32 +28,114 @@
 		<button id="connectButton" class="btn btn-warning btn-block">Connect Wallet</button>
 		<span id="addressWallet"></span>
 
+		<div class="mt-3 d-none" id="areaInfoRootToken">
+			<div>
+				<h4>Get information wallet</h4>
+				<div class="mb-1">
+					<button class="btn btn-primary" id="tokenTotalSupplyButton">Total supply</button>
+					<span id="tokenTotalSupplyShow"></span>
+				</div>
+			</div>
+
+			<div>
+				<h4>Mint and transfer token to address wallet</h4>
+				<div class="mt-1">
+					<label for="">Address wallet</label>
+					<input id="addressReceiver" type="text" class="form-control"
+						placeholder="Please input address wallet" aria-label="Please input address wallet"
+						aria-describedby="button-addon2">
+				</div>
+				<div class="mt-1">
+					<label for="">Amount</label>
+					<input id="amountSendToken" type="number" class="form-control"
+						placeholder="Please input amount"
+						aria-describedby="button-addon2">
+				</div>
+				<button class="btn btn-warning mt-1" type="button" id="btnSendToken">Send token</button>
+			</div>
+		</div>
+
+
+
 		<div class="mt-3 d-none" id="areaInfoToken">
-			<div class="mb-1">
-				<button class="btn btn-primary" id="tokenBalanceButton">Balances</button>
-				<span id="tokenBalanceShow"></span>
+			<div>
+				<h4>Get information wallet</h4>
+				<div class="mb-1">
+					<button class="btn btn-primary" id="tokenBalanceButton">Balances</button>
+					<span id="tokenBalanceShow"></span>
+				</div>
+				<div class="mb-1">
+					<button class="btn btn-primary" id="tokenNameButton">Token name</button>
+					<span id="tokenNameShow"></span>
+				</div>
+				<div class="mb-1">
+					<button class="btn btn-primary" id="tokenSymbolButton">Token symbols</button>
+					<span id="tokenSymbolShow"></span>
+				</div>
+
+				<div class="mb-1">
+					<button class="btn btn-primary" id="tokenAllowanceButton">Allowance token</button>
+					<span id="tokenAllowanceShow"></span>
+				</div>
 			</div>
-			<div class="mb-1">
-				<button class="btn btn-primary" id="tokenNameButton">Token name</button>
-				<span id="tokenNameShow"></span>
-			</div>
-			<div class="mb-1">
-				<button class="btn btn-primary" id="tokenSymbolButton">Token symbols</button>
-				<span id="tokenSymbolShow"></span>
+
+			<div>
+				<h4>List course</h4>
+				<table class="table">
+					<thead>
+						<tr>
+							<th scope="col">#</th>
+							<th scope="col">Name course</th>
+							<th scope="col">Author</th>
+							<th scope="col">Price (TRT token)</th>
+							<th scope="col">Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<th scope="row">1</th>
+							<td>Javascript video basic</td>
+							<td>Account 3</td>
+							<td>1000</td>
+							<td>
+								<button class="btn btn-success" id="btnApprove">Approve</button>
+								<button class="btn btn-success" id="btnIncreaseAllowance">IncreaseAllowance</button>
+								<button class="btn btn-info" id="btnTransferFrom">TransferFrom</button>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">2</th>
+							<td>Nodejs basic</td>
+							<td>Account 3</td>
+							<td>2000</td>
+							<td><button class="btn btn-success">Buy</button></td>
+						</tr>
+						<tr>
+							<th scope="row">3</th>
+							<td>PHP basic</td>
+							<td>Account 3</td>
+							<td>5000</td>
+							<td><button class="btn btn-success">Buy</button></td>
+						</tr>
+
+					</tbody>
+				</table>
 			</div>
 			<div class="row mt-3">
-				<div class="col-3"></div>
-				<div class="col-6">
+				<div class="col-md-6 col-sm-12">
 					<form>
 						<h4>Buy TRT Token with Visa card</h4>
 						<div class="mb-3">
-						  <label for="" class="form-label">Card informantion</label>
-						  <input required placeholder="4242 4242 4242 4242" maxlength="16" type="number" class="form-control" id="formNumberPayment">
+							<label for="" class="form-label">Card informantion</label>
+							<input required placeholder="4242 4242 4242 4242" maxlength="16" type="number"
+								class="form-control" id="formNumberPayment">
 						</div>
 						<div class="mb-3">
 							<div class="row">
-								<div class="col-6"><input placeholder="MM/YY" type="text" class="form-control" id=""></div>
-								<div class="col-6"><input placeholder="CVC" type="number" class="form-control" id=""></div>
+								<div class="col-6"><input placeholder="MM/YY" type="text" class="form-control" id="">
+								</div>
+								<div class="col-6"><input placeholder="CVC" type="number" class="form-control" id="">
+								</div>
 							</div>
 						</div>
 						<div class="mb-3">
@@ -57,17 +151,19 @@
 						</div>
 						<div>
 							<button class="btn btn-primary" type="button" id="btnBuyToken">Buy</button>
-							<img width="25%" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0GLJh19sn6AVFEV_iv3YGW2_-xLz5p2IekA&usqp=CAU" alt="">
+							<img width="25%"
+								src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0GLJh19sn6AVFEV_iv3YGW2_-xLz5p2IekA&usqp=CAU"
+								alt="">
 						</div>
 					</form>
 				</div>
-				<div class="col-3"></div>
 			</div>
 		</div>
 
 	</div>
 
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script> <!-- Include Axios library -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+	<!-- Include Axios library -->
 	<script>
 		// Init - Check connected wallet
 		let addressAccount = '';
@@ -75,9 +171,14 @@
 			.then((accounts) => {
 				if (accounts != '') {
 					document.getElementById('connectButton').disabled = true; // disable button when connect metamask done
-					document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts}`; // Add address wallet to element
-					document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
-					document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+					if (accounts == '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9') { // accout root
+						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (account Toratech)`;
+						document.getElementById('areaInfoRootToken').classList.remove("d-none"); // Show info token
+					} else {
+						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts}`; // Add address wallet to element
+						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
+						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+					}
 					addressAccount = accounts;
 				}
 			})
@@ -98,9 +199,14 @@
 						console.log('Connected to wallet:', selectedAddress);
 						// Add your wallet connection logic here
 						document.getElementById('connectButton').disabled = true; // disable button when connect metamask done
-						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${selectedAddress}`; // Add address wallet to element
-						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
-						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+						if (selectedAddress == '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9') { // accout root
+							document.getElementById('addressWallet').innerHTML = `Wallet Address: ${selectedAddress}`; // Add address wallet to element
+							document.getElementById('areaInfoRootToken').classList.remove("d-none"); // Show info token
+						} else {
+							document.getElementById('addressWallet').innerHTML = `Wallet Address: ${selectedAddress}`; // Add address wallet to element
+							document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
+							document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+						}
 						addressAccount = accounts;
 					})
 					.catch((error) => {
@@ -113,7 +219,7 @@
 			}
 		});
 
-		// Button click event (get token name)
+		// Button click event (get token balance)
 		const tokenBalanceButton = document.getElementById('tokenBalanceButton');
 		tokenBalanceButton.addEventListener('click', () => {
 			axios.get(`http://localhost:3000/balance-of?address=${addressAccount}`)
@@ -124,7 +230,7 @@
 				.catch(error => {
 					console.error(error);
 				});
-			
+
 		});
 
 		// Button click event (get token name)
@@ -138,7 +244,7 @@
 				.catch(error => {
 					console.error(error);
 				});
-			
+
 		});
 
 		// Button click event (get token symbol)
@@ -152,7 +258,35 @@
 				.catch(error => {
 					console.error(error);
 				});
-			
+
+		});
+
+		// Button click event (tokenAllowanceButton)
+		const getTokenAllowanceButton = document.getElementById('tokenAllowanceButton');
+		getTokenAllowanceButton.addEventListener('click', () => {
+			axios.get(`http://localhost:3000/allowance?address=${addressAccount}`)
+				.then(response => {
+					const data = response.data;
+					document.getElementById('tokenAllowanceShow').innerHTML = data.allowance;
+				})
+				.catch(error => {
+					console.error(error);
+				});
+
+		});
+
+		// Button click event (get token total supply)
+		const getTokenTotalSupplyButton = document.getElementById('tokenTotalSupplyButton');
+		getTokenTotalSupplyButton.addEventListener('click', () => {
+			axios.get('http://localhost:3000/total-supply')
+				.then(response => {
+					const data = response.data;
+					document.getElementById('tokenTotalSupplyShow').innerHTML = data.totalSupply;
+				})
+				.catch(error => {
+					console.error(error);
+				});
+
 		});
 
 		// Button click event (buy token)
@@ -180,6 +314,83 @@
 				})
 				.catch(error => {
 					console.error(error);
+				});
+		});
+
+		// Button click event (send token by mint)
+		const btnSendToken = document.getElementById('btnSendToken');
+		btnSendToken.addEventListener('click', () => {
+			const params = {
+				addressReceiver: document.getElementById('addressReceiver').value,
+				valueToken: document.getElementById('amountSendToken').value,
+			};
+			
+			if (params.addressReceiver == '') {
+				alert('addressReceiver require input');
+				return false;
+			}
+
+			axios.post('http://localhost:3000/mint-transfer', params)
+				.then(response => {
+					const data = response.data;
+					console.log("EJS: ", data);
+				})
+				.catch(error => {
+					console.error(error);
+				});
+		});
+
+		// Button click event (approve)
+		const getBtnApprove = document.getElementById('btnApprove');
+		getBtnApprove.addEventListener('click', () => {
+			const params = {
+				spender: addressAccount,
+				amount: '1000',
+			};
+
+			axios.post('http://localhost:3000/approve', params)
+				.then(response => {
+					const data = response.data;
+					console.log(data);
+				})
+				.catch(error => {
+					console.log('error approve');
+				});
+		}); 
+
+		// btnIncreaseAllowance
+		const getBtnIncreaseAllowance = document.getElementById('btnIncreaseAllowance');
+		getBtnIncreaseAllowance.addEventListener('click', () => {
+			const params = {
+				spender: addressAccount,
+				amount: '1000',
+			};
+
+			axios.post('http://localhost:3000/increase-allownce', params)
+				.then(response => {
+					const data = response.data;
+					console.log(data);
+				})
+				.catch(error => {
+					console.log('error approve');
+				});
+		}); 
+
+		// Button click event (transferfrom)
+		const getBtnTransferFrom = document.getElementById('btnTransferFrom');
+		getBtnTransferFrom.addEventListener('click', () => {
+			const params = {
+				spender: addressAccount,
+				amount: '1000',
+			};
+
+			axios.post('http://localhost:3000/transfer-from', params)
+				.then(response => {
+					const data = response.data;
+					console.log(data);
+				})
+				.catch(error => {
+					console.log('error transfer');
 				});
 		});
 

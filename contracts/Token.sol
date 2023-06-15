@@ -13,6 +13,10 @@ contract Token is ERC20 {
         message = initMessage;
     }
 
+    function mint(address to, uint256 amount) public {
+        _mint(to, amount);
+    }
+
     function burn(uint256 amount) external {
         _burn(msg.sender, amount);
     }
