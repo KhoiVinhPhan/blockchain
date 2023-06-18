@@ -11,7 +11,7 @@ const Tx = require('ethereumjs-tx').Transaction;
 const MyContract = require("./artifacts/contracts/Token.sol/Token.json");
 const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
-const contractAddress = '0xAA7D1bC4e7ca6772c6CE2b8603CC2019B4A072eF'; // Enter your contract address here
+const contractAddress = '0x45F53260C5932Fab52c0f16e684335f8CF0DFD79'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
 const fromAddress = '0x3c37F1dB4F1227DE8D6D17c979565D28E6eAF0f9'; // Address wallet account root(tora)
 const privateKey = '19eb5600c8c8a54861214071cd58c7e8f64240d18799c1c27d9e8ec45412275e'; // private key of account root (tora)
@@ -138,7 +138,7 @@ app.get('/symbol', async (req, res) => {
 app.get('/allowance', async (req, res) => {
     console.log('----- Start call API: /allowance -----');
     let spenderAddress = req.query.address;
-    contract.methods.allowance(fromAddress, spenderAddress).call()
+    contract.methods.allowance(spenderAddress, fromAddress).call()
         .then((allowance) => {
             console.log('Allowance:', allowance);
             console.log('----- End call API: /allowance -----');
@@ -367,24 +367,24 @@ app.post('/approve', async (req, res) => {
     // console.log(amount);
 
     const spender = req.body.spender;
-    const amount = '1000000000000000000';
+    const amount = web3.utils.toHex(web3.utils.toWei('10000'));
     console.log('amount', amount);
 
     // Create the approval transaction data
-    const approvalData = contract.methods.approve('0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4', amount).encodeABI();
+    const approvalData = contract.methods.approve('0x7019c9b19f4485b516b1d8c34c621fd0325cab84', amount).encodeABI();
 
     // Get the account's nonce
     const nonce = await web3.eth.getTransactionCount(fromAddress);
 
-
     // Build the transaction object
     const txObject = {
-        from: '0x7019c9b19f4485b516b1d8c34c621fd0325cab84',
+        from: '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9',
         to: contractAddress,
         gas: 200000,
         gasPrice: web3.utils.toWei('10', 'gwei'), // Adjust the gas price as needed
         data: approvalData,
-        // nonce: nonce
+        nonce: nonce,
+        value: "0x00",
     };
 
     // Sign the transaction
@@ -400,77 +400,6 @@ app.post('/approve', async (req, res) => {
 
     console.log('----- End call API: /approve -----');
     // return txReceipt;
-
-
-
-
-    // // Địa chỉ người được ủy quyền
-    // const approvedAddress = '0x7019c9b19f4485b516b1d8c34c621fd0325cab84';
-
-    // // Số lượng token được ủy quyền
-    // const approvedAmount = 15000;
-
-    // // Khởi tạo phương thức approve để ủy quyền số lượng token
-    // const approveMethod = contract.methods.approve(approvedAddress, approvedAmount);
-
-    // // Lấy thông tin gas price hiện tại
-    // web3.eth.getGasPrice()
-    //     .then((gasPrice) => {
-    //         const gasPriceHex = web3.utils.toHex(gasPrice);
-
-    //         // Lấy số nonce hiện tại của địa chỉ nguồn
-    //         web3.eth.getTransactionCount(fromAddress)
-    //             .then((nonce) => {
-    //                 const nonceHex = web3.utils.toHex(nonce);
-
-    //                 // Lấy gas limit ước tính cho giao dịch approve
-    //                 approveMethod.estimateGas({ from: fromAddress })
-    //                     .then((gasLimit) => {
-    //                         const gasLimitHex = web3.utils.toHex(gasLimit);
-
-    //                         // Tạo đối tượng giao dịch approve
-    //                         const approveTxObject = {
-    //                             nonce: nonceHex,
-    //                             gasPrice: gasPriceHex,
-    //                             gasLimit: gasLimitHex,
-    //                             to: contractAddress,
-    //                             value: '0x0',
-    //                             data: approveMethod.encodeABI(),
-    //                         };
-
-    //                         // Ký giao dịch approve
-    //                         web3.eth.accounts.signTransaction(approveTxObject, privateKey)
-    //                             .then((signedApproveTx) => {
-    //                                 // Gửi giao dịch approve đã ký
-    //                                 web3.eth.sendSignedTransaction(signedApproveTx.rawTransaction)
-    //                                     .on('transactionHash', (hash) => {
-    //                                         console.log('Approve transaction hash:', hash);
-    //                                         console.log('Please wait receipt processing.');
-    //                                     })
-    //                                     .on('receipt', (approveReceipt) => {
-    //                                         console.log('Approve transaction receipt:', approveReceipt);
-    //                                         console.log('----- End call API: /approve -----');
-    //                                         res.json({ message: 'Approve OK' });
-    //                                     })
-    //                                     .on('error', (error) => {
-    //                                         console.error('Approve transaction error:', error);
-    //                                     });
-    //                             })
-    //                             .catch((error) => {
-    //                                 console.error('Sign approve transaction error:', error);
-    //                             });
-    //                     })
-    //                     .catch((error) => {
-    //                         console.error('Estimate approve gas limit error:', error);
-    //                     });
-    //             })
-    //             .catch((error) => {
-    //                 console.error('Get nonce error:', error);
-    //             });
-    //     })
-    //     .catch((error) => {
-    //         console.error('Get gas price error:', error);
-    //     });
 
 });
 
@@ -517,85 +446,51 @@ app.post('/increase-allownce', async (req, res) => {
 
 app.post('/transfer-from', async (req, res) => {
     console.log('----- Start call API: /transfer-from -----');
-    // const { spender, amount } = req.body;
-    // console.log(spender);
-    // console.log(amount);
+    try {
+        const sourceAddress = '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9';
+        const spenderAddress = '0x7019c9b19f4485b516b1d8c34c621fd0325cab84';
+        const recipientAddress = '0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4';
+        const amount = web3.utils.toHex(web3.utils.toWei('1000'));
 
-    // // Địa chỉ người gửi
-    // const approvedAddress = '0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4';
+        // Tạo giao dịch approve
+        console.log('Tạo giao dịch approve');
+        const approveData = contract.methods.approve(spenderAddress, amount).encodeABI();
+        const approveTxCount = await web3.eth.getTransactionCount(sourceAddress);
+        const approveTxObject = {
+            nonce: web3.utils.toHex(approveTxCount),
+            gasLimit: web3.utils.toHex(500000),
+            gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+            to: contractAddress,
+            from: sourceAddress,
+            data: approveData
+        };
+        const signedApproveTx = await web3.eth.accounts.signTransaction(approveTxObject, privateKey);
+        console.log('signedApproveTx: ', signedApproveTx);
+        const approveTxReceipt = await web3.eth.sendSignedTransaction(signedApproveTx.rawTransaction);
+        console.log('Approve Transaction Receipt:', approveTxReceipt);
 
-    // // Địa chỉ người nhận
-    // const toAddress = '0x7019c9b19f4485b516b1d8c34c621fd0325cab84';
+        // Tạo giao dịch transferFrom
+        console.log('Tạo giao dịch transferFrom');
+        const transferFromData = contract.methods.transferFrom(spenderAddress, sourceAddress, amount).encodeABI();
+        const transferFromTxCount = await web3.eth.getTransactionCount(sourceAddress);
+        const transferFromTxObject = {
+            nonce: web3.utils.toHex(transferFromTxCount),
+            gasLimit: web3.utils.toHex(500000),
+            gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+            to: contractAddress,
+            from: spenderAddress,
+            data: transferFromData
+        };
+        const signedTransferFromTx = await web3.eth.accounts.signTransaction(transferFromTxObject, privateKey);
+        console.log('signedTransferFromTx: ', signedTransferFromTx);
+        const transferFromTxReceipt = await web3.eth.sendSignedTransaction(signedTransferFromTx.rawTransaction);
+        console.log('TransferFrom Transaction Receipt:', transferFromTxReceipt);
 
-    // // Số lượng token được gửi
-    // const amount = '100';
-
-    // // Khởi tạo phương thức transferFrom với các tham số tương ứng
-    // const transferFromMethod = contract.methods.transferFrom(fromAddress, toAddress, amount);
-
-    // const gasPrice = await web3.eth.getGasPrice();
-    // console.log(gasPrice);
-
-    // const transactionObject = {
-    //     from: fromAddress,
-    //     to: contractAddress,
-    //     data: transferFromMethod.encodeABI(),
-    //     gas: 2000000, // Số lượng gas được sử dụng
-    //     gasPrice: gasPrice,
-    //     nonce: await web3.eth.getTransactionCount(fromAddress)
-    // };
-
-    // //  Ký giao dịch transferFrom
-    // web3.eth.accounts.signTransaction(transactionObject, privateKey)
-    //     .then((signedTransferFromTx) => {
-    //         // Gửi giao dịch transferFrom đã ký
-    //         web3.eth.sendSignedTransaction(signedTransferFromTx.rawTransaction)
-    //             .on('transactionHash', (transferFromHash) => {
-    //                 console.log('TransferFrom transaction hash:', transferFromHash);
-    //             })
-    //             .on('receipt', (transferFromReceipt) => {
-    //                 console.log('TransferFrom transaction receipt:', transferFromReceipt);
-    //             })
-    //             .on('error', (error) => {
-    //                 console.error('TransferFrom transaction error:', error);
-    //             });
-    //     })
-    //     .catch((error) => {
-    //         console.error('Sign transferFrom transaction error:', error);
-    //     });
-
-    const sendAdress = '0x7019c9b19f4485b516b1d8c34c621fd0325cab84';
-    const toAddress = '0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4';
-    const amount = '1000000000000000000';
-    console.log('amount',amount);
-
-    // Create the transferFrom transaction data
-    const transferFromData = contract.methods.transferFrom(sendAdress, toAddress, amount).encodeABI();
-
-    // Get the account's nonce
-    const nonce = await web3.eth.getTransactionCount(sendAdress);
-
-    // Build the transaction object
-    const txObject = {
-        from: fromAddress,
-        to: contractAddress,
-        gas: web3.utils.toHex(2000000), // Adjust the gas limit as needed
-        // gasPrice: web3.utils.toHex(20000000000), // Adjust the gas price as needed
-        data: transferFromData
-        // nonce: nonce
-    };
-
-    // Sign the transaction
-    const signedTx = await web3.eth.accounts.signTransaction(txObject, privateKey);
-    console.log('SignTransaction processing ...');
-    console.log('Information: ', signedTx);
-
-
-    // Send the signed transaction
-    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    console.log('SendSignedTransaction processing ...');
-    console.log('Transaction receipt:', receipt);
-
+        console.log('Transfer successful');
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
     console.log('----- End call API: /transfer-from -----');
 
 });
@@ -612,13 +507,13 @@ app.post('/approve-transfer', async (req, res) => {
     const approvedAddress = '0x7019C9B19F4485B516B1D8C34C621Fd0325CaB84';
 
     // Số lượng token được ủy quyền
-    const approvedAmount = '4000';
+    const approvedAmount = web3.utils.toHex(web3.utils.toWei('3000'));
 
     // Khởi tạo phương thức approve để ủy quyền số lượng token
     const approveMethod = contract.methods.approve(approvedAddress, approvedAmount);
 
     // Khởi tạo phương thức transferFrom với các tham số tương ứng
-    const transferFromMethod = contract.methods.transferFrom(approvedAddress, toAddress, '1000');
+    const transferFromMethod = contract.methods.transferFrom(approvedAddress, fromAddress, approvedAmount);
 
     // Lấy thông tin gas price hiện tại
     web3.eth.getGasPrice()
@@ -634,22 +529,22 @@ app.post('/approve-transfer', async (req, res) => {
                     approveMethod.estimateGas({ from: fromAddress })
                         .then((gasLimit) => {
                             const gasLimitHex = web3.utils.toHex(gasLimit);
-                            console.log('gasLimitHex ' + gasLimitHex);
-
                             // Tạo đối tượng giao dịch approve
                             const approveTxObject = {
                                 nonce: nonceHex,
-                                gasPrice: gasPriceHex,
-                                gasLimit: gasLimitHex,
+                                gasLimit: web3.utils.toHex(500000),
+                                gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
                                 to: contractAddress,
-                                value: '0x0',
-                                data: approveMethod.encodeABI(),
+                                from: fromAddress,
+                                data: approveMethod.encodeABI()
                             };
 
                             // Ký giao dịch approve
+                            console.log('Ký giao dịch approve');
                             web3.eth.accounts.signTransaction(approveTxObject, privateKey)
                                 .then((signedApproveTx) => {
                                     // Gửi giao dịch approve đã ký
+                                    console.log('Gửi giao dịch approve đã ký');
                                     web3.eth.sendSignedTransaction(signedApproveTx.rawTransaction)
                                         .on('transactionHash', (hash) => {
                                             console.log('Approve transaction hash:', hash);
@@ -660,19 +555,19 @@ app.post('/approve-transfer', async (req, res) => {
 
                                             // Tạo đối tượng giao dịch transferFrom
                                             const transferFromTxObject = {
-                                                from: fromAddress,
-                                                nonce: nonceHex + 1,
-                                                gasPrice: gasPriceHex,
-                                                gas: 2000000, // Số lượng gas được sử dụng
+                                                gasLimit: web3.utils.toHex(500000),
+                                                gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
                                                 to: contractAddress,
-                                                value: '0x0',
-                                                data: transferFromMethod.encodeABI(),
+                                                from: approvedAddress,
+                                                data: transferFromMethod.encodeABI()
                                             };
 
                                             // Ký giao dịch transferFrom
+                                            console.log('Ký giao dịch transferFrom');
                                             web3.eth.accounts.signTransaction(transferFromTxObject, privateKey)
                                                 .then((signedTransferFromTx) => {
                                                     // Gửi giao dịch transferFrom đã ký
+                                                    console.log('Gửi giao dịch transferFrom đã ký');
                                                     web3.eth.sendSignedTransaction(signedTransferFromTx.rawTransaction)
                                                         .on('transactionHash', (transferFromHash) => {
                                                             console.log('TransferFrom transaction hash:', transferFromHash);
@@ -687,7 +582,6 @@ app.post('/approve-transfer', async (req, res) => {
                                                 .catch((error) => {
                                                     console.error('Sign transferFrom transaction error:', error);
                                                 });
-
                                         })
                                         .on('error', (error) => {
                                             console.error('Approve transaction error:', error);

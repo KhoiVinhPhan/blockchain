@@ -53,6 +53,16 @@
 				</div>
 				<button class="btn btn-warning mt-1" type="button" id="btnSendToken">Send token</button>
 			</div>
+
+			<div class="mt-3">
+				<h4>Transaction</h4>
+				<p>Một giao dịch đang được thực hiện</p>
+				<p>Name course: <span>Javascripts</span></p>
+				<p>Người mua: <span>account 2</span></p>
+				<p>Người bán: <span>account 3</span></p>
+				<p>Giá: <span>10000 TRT</span></p>
+				<p>Trạng thái: <span>đang thực hiện</span></p>
+			</div>
 		</div>
 
 
@@ -73,10 +83,6 @@
 					<span id="tokenSymbolShow"></span>
 				</div>
 
-				<div class="mb-1">
-					<button class="btn btn-primary" id="tokenAllowanceButton">Allowance token</button>
-					<span id="tokenAllowanceShow"></span>
-				</div>
 			</div>
 
 			<div>
@@ -98,26 +104,11 @@
 							<td>Account 3</td>
 							<td>1000</td>
 							<td>
-								<button class="btn btn-success" id="btnApprove">Approve</button>
-								<button class="btn btn-success" id="btnIncreaseAllowance">IncreaseAllowance</button>
-								<button class="btn btn-info" id="btnTransferFrom">TransferFrom</button>
+								<!-- <button class="btn btn-success" id="btnApprove">Approve</button>
+								<button class="btn btn-success" id="btnIncreaseAllowance">IncreaseAllowance</button> -->
+								<button class="btn btn-success" id="btnTransferFrom">Buy</button>
 							</td>
 						</tr>
-						<tr>
-							<th scope="row">2</th>
-							<td>Nodejs basic</td>
-							<td>Account 3</td>
-							<td>2000</td>
-							<td><button class="btn btn-success">Buy</button></td>
-						</tr>
-						<tr>
-							<th scope="row">3</th>
-							<td>PHP basic</td>
-							<td>Account 3</td>
-							<td>5000</td>
-							<td><button class="btn btn-success">Buy</button></td>
-						</tr>
-
 					</tbody>
 				</table>
 			</div>
@@ -384,7 +375,7 @@
 				amount: '1000',
 			};
 
-			axios.post('http://localhost:3000/transfer-from', params)
+			axios.post('http://localhost:3000/approve-transfer', params)
 				.then(response => {
 					const data = response.data;
 					console.log(data);
