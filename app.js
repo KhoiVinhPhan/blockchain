@@ -13,7 +13,7 @@ const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
 const contractAddress = '0x45F53260C5932Fab52c0f16e684335f8CF0DFD79'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
-const fromAddress = '0x3c37F1dB4F1227DE8D6D17c979565D28E6eAF0f9'; // Address wallet account root(tora)
+const fromAddress = '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9'; // Address wallet account root(tora)
 const privateKey = '19eb5600c8c8a54861214071cd58c7e8f64240d18799c1c27d9e8ec45412275e'; // private key of account root (tora)
 const decimals = 18;
 
@@ -501,7 +501,7 @@ app.post('/approve-transfer', async (req, res) => {
     // console.log(amount);
 
     // Địa chỉ người nhận
-    const toAddress = '0xa66EB11a3029044AA564Adbb1D744CD97B8fFaA4';
+    const toAddress = '0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4';
 
     // Địa chỉ người được ủy quyền
     const approvedAddress = '0x7019C9B19F4485B516B1D8C34C621Fd0325CaB84';
@@ -514,6 +514,8 @@ app.post('/approve-transfer', async (req, res) => {
 
     // Khởi tạo phương thức transferFrom với các tham số tương ứng
     const transferFromMethod = contract.methods.transferFrom(approvedAddress, fromAddress, approvedAmount);
+
+    const transferMethod = contract.methods.transfer(toAddress, approvedAmount);
 
     // Lấy thông tin gas price hiện tại
     web3.eth.getGasPrice()
@@ -549,6 +551,19 @@ app.post('/approve-transfer', async (req, res) => {
                                         .on('transactionHash', (hash) => {
                                             console.log('Approve transaction hash:', hash);
                                             // -> Sau khi giao dịch approve được gửi thành công, tiến hành gửi giao dịch transferFrom
+                                            
+                                            //Notification
+                                            pusher.trigger(`buy-course-channel-${fromAddress}`, `buy-course-event-${fromAddress}`, {
+                                                message: 'processing...'
+                                            })
+                                                .then(() => {
+                                                    console.log('Pusher event triggered successfully');
+                                                    // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                                                })
+                                                .catch((error) => {
+                                                    console.log('Error');
+                                                    // res.status(500).json({ error: 'Internal server error' });
+                                                });
                                         })
                                         .on('receipt', (approveReceipt) => {
                                             console.log('Approve transaction receipt:', approveReceipt);
@@ -574,6 +589,74 @@ app.post('/approve-transfer', async (req, res) => {
                                                         })
                                                         .on('receipt', (transferFromReceipt) => {
                                                             console.log('TransferFrom transaction receipt:', transferFromReceipt);
+                                                            //Notification
+                                                            pusher.trigger(`buy-course-channel-${fromAddress}`, `buy-course-event-${fromAddress}`, {
+                                                                message: 'Done!'
+                                                            })
+                                                                .then(() => {
+                                                                    console.log('Pusher event triggered successfully');
+                                                                    // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                                                                })
+                                                                .catch((error) => {
+                                                                    console.log('Error');
+                                                                    // res.status(500).json({ error: 'Internal server error' });
+                                                                });
+
+                                                            // ------------------- transfer ---------------------
+                                                            // Tạo đối tượng giao dịch transfer
+                                                            const transferTxObject = {
+                                                                gasLimit: web3.utils.toHex(100000),
+                                                                gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+                                                                to: contractAddress,
+                                                                from: fromAddress,
+                                                                data: transferMethod.encodeABI()
+                                                            };
+
+                                                            // Ký giao dịch transfer
+                                                            console.log('Ký giao dịch transfer');
+                                                            web3.eth.accounts.signTransaction(transferTxObject, privateKey)
+                                                                .then((signedTransferTx) => {
+                                                                    // Gửi giao dịch transfer đã ký
+                                                                    console.log('Gửi giao dịch transfer đã ký');
+                                                                    web3.eth.sendSignedTransaction(signedTransferTx.rawTransaction)
+                                                                        .on('transactionHash', (transferHash) => {
+                                                                            console.log('Transfer transaction hash:', transferHash);
+                                                                            //Notification
+                                                                            pusher.trigger(`buy-course-channel-${toAddress}`, `buy-course-event-${toAddress}`, {
+                                                                                message: 'processing...'
+                                                                            })
+                                                                                .then(() => {
+                                                                                    console.log('Pusher event triggered successfully');
+                                                                                    // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                                                                                })
+                                                                                .catch((error) => {
+                                                                                    console.log('Error');
+                                                                                    // res.status(500).json({ error: 'Internal server error' });
+                                                                                });
+                                                                        })
+                                                                        .on('receipt', (transferReceipt) => {
+                                                                            console.log('Transfer transaction receipt:', transferReceipt);
+                                                                            //Notification
+                                                                            pusher.trigger(`buy-course-channel-${toAddress}`, `buy-course-event-${toAddress}`, {
+                                                                                message: 'Done!'
+                                                                            })
+                                                                                .then(() => {
+                                                                                    console.log('Pusher event triggered successfully');
+                                                                                    // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                                                                                })
+                                                                                .catch((error) => {
+                                                                                    console.log('Error');
+                                                                                    // res.status(500).json({ error: 'Internal server error' });
+                                                                                });
+                                                                        })
+                                                                        .on('error', (error) => {
+                                                                            console.error('Transfer transaction error:', error);
+                                                                        });
+                                                                })
+                                                                .catch((error) => {
+                                                                    console.error('Sign transfer transaction error:', error);
+                                                                });
+                                                            // ------------------- transfer ---------------------
                                                         })
                                                         .on('error', (error) => {
                                                             console.error('TransferFrom transaction error:', error);

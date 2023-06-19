@@ -7,15 +7,7 @@
 		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 	<script src="https://js.pusher.com/7.2/pusher.min.js"></script>
 	<script>
-		// Enable pusher logging - don't include this in production
-		Pusher.logToConsole = true;
-		var pusher = new Pusher('cf2d8ddd49b9307e093e', {
-			cluster: 'ap1'
-		});
-		var channel = pusher.subscribe('my-channel');
-		channel.bind('my-event', function (data) {
-			console.log(JSON.stringify(data));
-		});
+		
 	</script>
 </head>
 
@@ -54,14 +46,8 @@
 				<button class="btn btn-warning mt-1" type="button" id="btnSendToken">Send token</button>
 			</div>
 
-			<div class="mt-3">
-				<h4>Transaction</h4>
-				<p>Một giao dịch đang được thực hiện</p>
-				<p>Name course: <span>Javascripts</span></p>
-				<p>Người mua: <span>account 2</span></p>
-				<p>Người bán: <span>account 3</span></p>
-				<p>Giá: <span>10000 TRT</span></p>
-				<p>Trạng thái: <span>đang thực hiện</span></p>
+			<div class="mt-3" id="transactionTokenRoot">
+				
 			</div>
 		</div>
 
@@ -85,7 +71,7 @@
 
 			</div>
 
-			<div>
+			<div id="listCourseShow">
 				<h4>List course</h4>
 				<table class="table">
 					<thead>
@@ -148,6 +134,10 @@
 						</div>
 					</form>
 				</div>
+
+				<div class="mt-3" id="transactionTokenTeacher">
+					
+				</div>
 			</div>
 		</div>
 
@@ -157,6 +147,10 @@
 	<!-- Include Axios library -->
 	<script>
 		// Init - Check connected wallet
+		Pusher.logToConsole = true;
+		var pusher = new Pusher('cf2d8ddd49b9307e093e', {
+			cluster: 'ap1'
+		});
 		let addressAccount = '';
 		window.ethereum.request({ method: 'eth_accounts' })
 			.then((accounts) => {
@@ -165,8 +159,48 @@
 					if (accounts == '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9') { // accout root
 						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (account Toratech)`;
 						document.getElementById('areaInfoRootToken').classList.remove("d-none"); // Show info token
+
+						// Pusher account root token
+						var channel = pusher.subscribe(`buy-course-channel-0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9`);
+						channel.bind(`buy-course-event-0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9`, function (data) {
+							console.log(data);
+							document.getElementById('transactionTokenRoot').innerHTML = '';
+							document.getElementById('transactionTokenRoot').innerHTML = `
+								<h4>Transaction</h4>
+								<p>A transaction is in progress</p>
+								<ul>
+									<li>Name course: <span>Javascript video basic</span></li>
+									<li>Buyer: <span>account 2</span></li>
+									<li>Recevier: <span>account 3</span></li>
+									<li>Price: <span>10000 TRT</span></li>
+									<li>Status: <span class="badge bg-primary">${data.message}</span></li>
+								</ul>
+							`;
+						});
+					} else if(accounts == '0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4') { // account 3: teacher
+						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Teacher)`; // Add address wallet to element
+						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
+						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+						document.getElementById('listCourseShow').classList.add('d-none');
+						// Pusher account root token
+						var channel = pusher.subscribe(`buy-course-channel-0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4`);
+						channel.bind(`buy-course-event-0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4`, function (data) {
+							console.log(JSON.stringify(data));
+							document.getElementById('transactionTokenTeacher').innerHTML = '';
+							document.getElementById('transactionTokenTeacher').innerHTML = `
+								<h4>Transaction</h4>
+								<p>A transaction is in progress</p>
+								<ul>
+									<li>Name course: <span>Javascript video basic</span></li>
+									<li>Buyer: <span>account 2</span></li>
+									<li>Recevier: <span>account 3</span></li>
+									<li>Price: <span>10000 TRT</span></li>
+									<li>Status: <span class="badge bg-primary">${data.message}</span></li>
+								</ul>
+							`;
+						});
 					} else {
-						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts}`; // Add address wallet to element
+						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Student)`; // Add address wallet to element
 						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
 						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
 					}
@@ -177,6 +211,11 @@
 				console.log('Error');
 			});
 
+		// Pusher all
+		var channel = pusher.subscribe('my-channel');
+		channel.bind('my-event', function (data) {
+			console.log(JSON.stringify(data));
+		});
 
 		// Button click event (Connect wallet)
 		const connectButton = document.getElementById('connectButton');
@@ -253,18 +292,18 @@
 		});
 
 		// Button click event (tokenAllowanceButton)
-		const getTokenAllowanceButton = document.getElementById('tokenAllowanceButton');
-		getTokenAllowanceButton.addEventListener('click', () => {
-			axios.get(`http://localhost:3000/allowance?address=${addressAccount}`)
-				.then(response => {
-					const data = response.data;
-					document.getElementById('tokenAllowanceShow').innerHTML = data.allowance;
-				})
-				.catch(error => {
-					console.error(error);
-				});
+		// const getTokenAllowanceButton = document.getElementById('tokenAllowanceButton');
+		// getTokenAllowanceButton.addEventListener('click', () => {
+		// 	axios.get(`http://localhost:3000/allowance?address=${addressAccount}`)
+		// 		.then(response => {
+		// 			const data = response.data;
+		// 			document.getElementById('tokenAllowanceShow').innerHTML = data.allowance;
+		// 		})
+		// 		.catch(error => {
+		// 			console.error(error);
+		// 		});
 
-		});
+		// });
 
 		// Button click event (get token total supply)
 		const getTokenTotalSupplyButton = document.getElementById('tokenTotalSupplyButton');
@@ -332,40 +371,40 @@
 		});
 
 		// Button click event (approve)
-		const getBtnApprove = document.getElementById('btnApprove');
-		getBtnApprove.addEventListener('click', () => {
-			const params = {
-				spender: addressAccount,
-				amount: '1000',
-			};
+		// const getBtnApprove = document.getElementById('btnApprove');
+		// getBtnApprove.addEventListener('click', () => {
+		// 	const params = {
+		// 		spender: addressAccount,
+		// 		amount: '1000',
+		// 	};
 
-			axios.post('http://localhost:3000/approve', params)
-				.then(response => {
-					const data = response.data;
-					console.log(data);
-				})
-				.catch(error => {
-					console.log('error approve');
-				});
-		}); 
+		// 	axios.post('http://localhost:3000/approve', params)
+		// 		.then(response => {
+		// 			const data = response.data;
+		// 			console.log(data);
+		// 		})
+		// 		.catch(error => {
+		// 			console.log('error approve');
+		// 		});
+		// }); 
 
 		// btnIncreaseAllowance
-		const getBtnIncreaseAllowance = document.getElementById('btnIncreaseAllowance');
-		getBtnIncreaseAllowance.addEventListener('click', () => {
-			const params = {
-				spender: addressAccount,
-				amount: '1000',
-			};
+		// const getBtnIncreaseAllowance = document.getElementById('btnIncreaseAllowance');
+		// getBtnIncreaseAllowance.addEventListener('click', () => {
+		// 	const params = {
+		// 		spender: addressAccount,
+		// 		amount: '1000',
+		// 	};
 
-			axios.post('http://localhost:3000/increase-allownce', params)
-				.then(response => {
-					const data = response.data;
-					console.log(data);
-				})
-				.catch(error => {
-					console.log('error approve');
-				});
-		}); 
+		// 	axios.post('http://localhost:3000/increase-allownce', params)
+		// 		.then(response => {
+		// 			const data = response.data;
+		// 			console.log(data);
+		// 		})
+		// 		.catch(error => {
+		// 			console.log('error approve');
+		// 		});
+		// }); 
 
 		// Button click event (transferfrom)
 		const getBtnTransferFrom = document.getElementById('btnTransferFrom');
