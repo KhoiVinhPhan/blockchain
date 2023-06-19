@@ -157,13 +157,13 @@
 			.then((accounts) => {
 				if (accounts != '') {
 					document.getElementById('connectButton').disabled = true; // disable button when connect metamask done
-					if (accounts == '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9') { // accout root
+					if (accounts == '0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087') { // accout root
 						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (account Toratech)`;
 						document.getElementById('areaInfoRootToken').classList.remove("d-none"); // Show info token
 
 						// Pusher account root token
-						var channel = pusher.subscribe(`buy-course-channel-0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9`);
-						channel.bind(`buy-course-event-0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9`, function (data) {
+						var channel = pusher.subscribe(`buy-course-channel-0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087`);
+						channel.bind(`buy-course-event-0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087`, function (data) {
 							console.log(data);
 							Toastify({
 								text: `Notifications about blockchain transactions: ${data.message}`,
@@ -192,14 +192,14 @@
 								</ul>
 							`;
 						});
-					} else if (accounts == '0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4') { // account 3: teacher
+					} else if (accounts == '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d') { // account 3: teacher
 						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Teacher)`; // Add address wallet to element
 						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
 						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
 						document.getElementById('listCourseShow').classList.add('d-none');
 						// Pusher account root token
-						var channel = pusher.subscribe(`buy-course-channel-0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4`);
-						channel.bind(`buy-course-event-0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4`, function (data) {
+						var channel = pusher.subscribe(`buy-course-channel-0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d`);
+						channel.bind(`buy-course-event-0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d`, function (data) {
 							console.log(JSON.stringify(data));
 							Toastify({
 								text: `Notifications about blockchain transactions: ${data.message}`,

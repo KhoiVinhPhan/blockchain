@@ -11,10 +11,10 @@ const Tx = require('ethereumjs-tx').Transaction;
 const MyContract = require("./artifacts/contracts/Token.sol/Token.json");
 const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
-const contractAddress = '0x45F53260C5932Fab52c0f16e684335f8CF0DFD79'; // Enter your contract address here
+const contractAddress = '0xbc5184115Ca96FdB62276B7F3Bb79C924b913112'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
-const fromAddress = '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9'; // Address wallet account root(tora)
-const privateKey = '19eb5600c8c8a54861214071cd58c7e8f64240d18799c1c27d9e8ec45412275e'; // private key of account root (tora)
+const rootAddressWallet = "0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087"; // Address wallet account root(tora)
+const privateKey = '52da2c4e7ad4c58cd693f5e9f4aa6408d388529365c08514203ae446e0e23384'; // private key of account root (tora)
 const decimals = 18;
 
 // stripe config
@@ -36,7 +36,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const web3 = new Web3(new Web3.providers.HttpProvider(rpcEndpoint));
 // const web3 = new Web3(rpcEndpoint);
-const contract = new web3.eth.Contract(contractABI, contractAddress, { from: fromAddress });
+const contract = new web3.eth.Contract(contractABI, contractAddress, { from: rootAddressWallet });
 
 // WebSocket connection event
 wss.on('connection', (ws) => {
@@ -61,12 +61,11 @@ app.set('view engine', 'ejs'); // Set the view engine to EJS
 
 // Listen notification of stripe
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request, response) => {
+    console.log('----- Start call api: /stripe-webhook -----');
     const sig = request.headers['stripe-signature'];
     try {
         let event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
         if (event.type === 'payment_intent.succeeded') {
-            console.log('----- Start call webhook stripe: payment_intent.succeeded -----');
-
             // Access the metadata from the event object
             const metadata = event.data.object.metadata;
             console.log('Metadata: ', metadata);
@@ -80,10 +79,11 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
                     console.log(response.data.message);
                 })
                 .catch(error => {
-                    console.log('error');
+                    console.log('error', error);
                 });
         }
         response.send();
+        console.log('----- End call api: /stripe-webhook -----');
     } catch (err) {
         console.log(`Webhook Error: ${err.message}`);
         return;
@@ -138,7 +138,7 @@ app.get('/symbol', async (req, res) => {
 app.get('/allowance', async (req, res) => {
     console.log('----- Start call API: /allowance -----');
     let spenderAddress = req.query.address;
-    contract.methods.allowance(spenderAddress, fromAddress).call()
+    contract.methods.allowance(spenderAddress, rootAddressWallet).call()
         .then((allowance) => {
             console.log('Allowance:', allowance);
             console.log('----- End call API: /allowance -----');
@@ -157,38 +157,45 @@ app.get('/total-supply', async (req, res) => {
 });
 
 app.get('/transfer', async (req, res) => {
-    console.log('-----Call API get transfer token: /transfer-----');
+    console.log('----- Start API get transfer token: /transfer-----');
 
-    let amount = web3.utils.toHex(web3.utils.toWei(req.query.valueToken)); //1 DEMO Token
-    let data = contract.methods.transfer(req.query.addressReceiver, amount).encodeABI();
-    sendErcToken();
-    res.json({ message: 'Transfer TRT token success' });
+    // ------------------- transfer ---------------------
+    let amount = web3.utils.toHex(web3.utils.toWei(req.query.valueToken));
+    let transferMethod = contract.methods.transfer(req.query.addressReceiver, amount);
+    // Tạo đối tượng giao dịch transfer
+    const transferTxObject = {
+        gasLimit: web3.utils.toHex(100000),
+        gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+        to: contractAddress,
+        from: rootAddressWallet,
+        data: transferMethod.encodeABI()
+    };
 
-    function sendErcToken() {
-        let txObj = {
-            gas: web3.utils.toHex(100000),
-            "to": contractAddress,
-            "value": "0x00",
-            "data": data,
-            "from": fromAddress
-
-        }
-        web3.eth.accounts.signTransaction(txObj, privateKey, (err, signedTx) => {
-            if (err) {
-                return callback(err)
-            } else {
-                return web3.eth.sendSignedTransaction(signedTx.rawTransaction, (err, res) => {
-                    if (err) {
-                        console.log(err)
-                    } else {
-                        console.log(res)
-                    }
+    // Ký giao dịch transfer
+    console.log('Ký giao dịch transfer');
+    web3.eth.accounts.signTransaction(transferTxObject, privateKey)
+        .then((signedTransferTx) => {
+            // Gửi giao dịch transfer đã ký
+            console.log('Gửi giao dịch transfer đã ký');
+            web3.eth.sendSignedTransaction(signedTransferTx.rawTransaction)
+                .on('transactionHash', (transferHash) => {
+                    console.log('Transfer transaction hash:', transferHash);
+                   
                 })
-            }
+                .on('receipt', (transferReceipt) => {
+                    console.log('Transfer transaction receipt:', transferReceipt);
+                   
+                    // res.status(200).json({ status: true });
+                    console.log('-----End API get transfer token: /transfer-----');
+                })
+                .on('error', (error) => {
+                    console.error('Transfer transaction error:', error);
+                });
         })
-    }
-
-    console.log('-----End API get transfer token: /transfer-----');
+        .catch((error) => {
+            console.error('Sign transfer transaction error:', error);
+        });
+    // ------------------- transfer ---------------------
 });
 
 
@@ -237,7 +244,7 @@ app.post('/mint-transfer', async (req, res) => {
     console.log(valueToken);
 
     // start mint token
-    const mintMethod = contract.methods.mint(fromAddress, amount);
+    const mintMethod = contract.methods.mint(rootAddressWallet, amount);
     const transactionData = mintMethod.encodeABI();
     web3.eth.accounts.signTransaction(
         {
@@ -260,7 +267,7 @@ app.post('/mint-transfer', async (req, res) => {
                         "to": contractAddress,
                         "value": "0x00",
                         "data": transferMethod,
-                        "from": fromAddress
+                        "from": rootAddressWallet
                     }
                     web3.eth.accounts.signTransaction(txObj, privateKey)
                         .then((signedTx) => {
@@ -320,7 +327,7 @@ app.post('/trigger-event', (req, res) => {
     console.log(message);
 
     let amount = web3.utils.toHex(web3.utils.toWei('1000')); //1 DEMO Token
-    let data = contract.methods.transfer('0x7019C9B19F4485B516B1D8C34C621Fd0325CaB84', amount).encodeABI();
+    let data = contract.methods.transfer('address-wallet', amount).encodeABI();
     sendErcToken();
     res.json({ message: 'Transfer TRT token success' });
 
@@ -330,7 +337,7 @@ app.post('/trigger-event', (req, res) => {
             "to": contractAddress,
             "value": "0x00",
             "data": data,
-            "from": fromAddress
+            "from": rootAddressWallet
 
         }
         web3.eth.accounts.signTransaction(txObj, privateKey, (err, signedTx) => {
@@ -371,14 +378,14 @@ app.post('/approve', async (req, res) => {
     console.log('amount', amount);
 
     // Create the approval transaction data
-    const approvalData = contract.methods.approve('0x7019c9b19f4485b516b1d8c34c621fd0325cab84', amount).encodeABI();
+    const approvalData = contract.methods.approve('address-wallet', amount).encodeABI();
 
     // Get the account's nonce
-    const nonce = await web3.eth.getTransactionCount(fromAddress);
+    const nonce = await web3.eth.getTransactionCount(rootAddressWallet);
 
     // Build the transaction object
     const txObject = {
-        from: '0x3c37f1db4f1227de8d6d17c979565d28e6eaf0f9',
+        from: rootAddressWallet,
         to: contractAddress,
         gas: 200000,
         gasPrice: web3.utils.toWei('10', 'gwei'), // Adjust the gas price as needed
@@ -416,11 +423,11 @@ app.post('/increase-allownce', async (req, res) => {
     const contractIncreaseAllowance = contract.methods.increaseAllowance(spender[0], amount).encodeABI();
 
     // Get the account's nonce
-    const nonce = await web3.eth.getTransactionCount(fromAddress);
+    const nonce = await web3.eth.getTransactionCount(rootAddressWallet);
 
     // Build the transaction object
     const txObject = {
-        from: fromAddress,
+        from: rootAddressWallet,
         to: contractAddress,
         gas: 200000, // Adjust the gas limit as needed
         gasPrice: web3.utils.toWei('10', 'gwei'), // Adjust the gas price as needed
@@ -501,10 +508,10 @@ app.post('/approve-transfer', async (req, res) => {
     // console.log(amount);
 
     // Địa chỉ người nhận
-    const toAddress = '0xa66eb11a3029044aa564adbb1d744cd97b8ffaa4';
+    const toAddress = '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d';
 
     // Địa chỉ người được ủy quyền
-    const approvedAddress = '0x7019C9B19F4485B516B1D8C34C621Fd0325CaB84';
+    const approvedAddress = '0x35755b2c2e2b97061f3401185a2ed55960eb4b6d';
 
     // Số lượng token được ủy quyền
     const approvedAmount = web3.utils.toHex(web3.utils.toWei('10000'));
@@ -513,7 +520,7 @@ app.post('/approve-transfer', async (req, res) => {
     const approveMethod = contract.methods.approve(approvedAddress, approvedAmount);
 
     // Khởi tạo phương thức transferFrom với các tham số tương ứng
-    const transferFromMethod = contract.methods.transferFrom(approvedAddress, fromAddress, approvedAmount);
+    const transferFromMethod = contract.methods.transferFrom(approvedAddress, rootAddressWallet, approvedAmount);
 
     const transferMethod = contract.methods.transfer(toAddress, web3.utils.toHex(web3.utils.toWei('7000')));
 
@@ -523,12 +530,12 @@ app.post('/approve-transfer', async (req, res) => {
             const gasPriceHex = web3.utils.toHex(gasPrice);
 
             // Lấy số nonce hiện tại của địa chỉ nguồn
-            web3.eth.getTransactionCount(fromAddress)
+            web3.eth.getTransactionCount(rootAddressWallet)
                 .then((nonce) => {
                     const nonceHex = web3.utils.toHex(nonce);
 
                     // Lấy gas limit ước tính cho giao dịch approve
-                    approveMethod.estimateGas({ from: fromAddress })
+                    approveMethod.estimateGas({ from: rootAddressWallet })
                         .then((gasLimit) => {
                             const gasLimitHex = web3.utils.toHex(gasLimit);
                             // Tạo đối tượng giao dịch approve
@@ -537,7 +544,7 @@ app.post('/approve-transfer', async (req, res) => {
                                 gasLimit: web3.utils.toHex(500000),
                                 gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
                                 to: contractAddress,
-                                from: fromAddress,
+                                from: rootAddressWallet,
                                 data: approveMethod.encodeABI()
                             };
 
@@ -551,9 +558,9 @@ app.post('/approve-transfer', async (req, res) => {
                                         .on('transactionHash', (hash) => {
                                             console.log('Approve transaction hash:', hash);
                                             // -> Sau khi giao dịch approve được gửi thành công, tiến hành gửi giao dịch transferFrom
-                                            
+
                                             //Notification
-                                            pusher.trigger(`buy-course-channel-${fromAddress}`, `buy-course-event-${fromAddress}`, {
+                                            pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
                                                 message: 'processing...'
                                             })
                                                 .then(() => {
@@ -590,7 +597,7 @@ app.post('/approve-transfer', async (req, res) => {
                                                         .on('receipt', (transferFromReceipt) => {
                                                             console.log('TransferFrom transaction receipt:', transferFromReceipt);
                                                             //Notification
-                                                            pusher.trigger(`buy-course-channel-${fromAddress}`, `buy-course-event-${fromAddress}`, {
+                                                            pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
                                                                 message: 'Done!'
                                                             })
                                                                 .then(() => {
@@ -608,7 +615,7 @@ app.post('/approve-transfer', async (req, res) => {
                                                                 gasLimit: web3.utils.toHex(100000),
                                                                 gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
                                                                 to: contractAddress,
-                                                                from: fromAddress,
+                                                                from: rootAddressWallet,
                                                                 data: transferMethod.encodeABI()
                                                             };
 
