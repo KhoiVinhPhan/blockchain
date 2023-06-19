@@ -11,7 +11,7 @@ const Tx = require('ethereumjs-tx').Transaction;
 const MyContract = require("./artifacts/contracts/Token.sol/Token.json");
 const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
-const contractAddress = '0xbc5184115Ca96FdB62276B7F3Bb79C924b913112'; // Enter your contract address here
+const contractAddress = '0xa0aE7aa1768aa12C67003914eFC24b99aEdFD2b3'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
 const rootAddressWallet = "0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087"; // Address wallet account root(tora)
 const privateKey = '52da2c4e7ad4c58cd693f5e9f4aa6408d388529365c08514203ae446e0e23384'; // private key of account root (tora)
@@ -74,13 +74,30 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
             const amount = (event.data.object.amount) / 100;
             console.log('Amount: ', amount);
 
-            axios.get(`http://localhost:3000/transfer?addressReceiver=${metadata.addressWallet}&valueToken=${amount}`)
-                .then(response => {
-                    console.log(response.data.message);
-                })
-                .catch(error => {
-                    console.log('error', error);
-                });
+
+            const params = {
+				addressReceiver: metadata.addressWallet,
+				valueToken: amount,
+			};
+
+			axios.post('http://localhost:3000/mint-transfer', params)
+				.then(response => {
+					const data = response.data;
+					console.log("EJS: ", data);
+				})
+				.catch(error => {
+					console.error(error);
+				});
+
+
+
+            // axios.get(`http://localhost:3000/transfer?addressReceiver=${metadata.addressWallet}&valueToken=${amount}`)
+            //     .then(response => {
+            //         console.log(response.data.message);
+            //     })
+            //     .catch(error => {
+            //         console.log('error', error);
+            //     });
         }
         response.send();
         console.log('----- End call api: /stripe-webhook -----');
@@ -239,18 +256,18 @@ app.post('/mint-transfer', async (req, res) => {
     console.log('-----Call API get transfer token: /mint-transfer-----');
     let addressReceiver = req.body.addressReceiver;
     let valueToken = req.body.valueToken;
-    let amount = web3.utils.toHex(web3.utils.toWei(valueToken));
-    console.log(addressReceiver);
-    console.log(valueToken);
+    let amount = web3.utils.toHex(web3.utils.toWei(valueToken.toString()));
 
     // start mint token
     const mintMethod = contract.methods.mint(rootAddressWallet, amount);
-    const transactionData = mintMethod.encodeABI();
     web3.eth.accounts.signTransaction(
         {
+            
+            gasLimit: web3.utils.toHex(100000),
+            gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
             to: contractAddress,
-            data: transactionData,
-            gas: 200000, // Số gas cần thiết cho giao dịch
+            from: rootAddressWallet,
+            data: mintMethod.encodeABI()
         },
         privateKey
     )
@@ -263,11 +280,11 @@ app.post('/mint-transfer', async (req, res) => {
                     // start transfer token
                     let transferMethod = contract.methods.transfer(addressReceiver, amount).encodeABI();
                     let txObj = {
-                        "gas": web3.utils.toHex(100000),
-                        "to": contractAddress,
-                        "value": "0x00",
-                        "data": transferMethod,
-                        "from": rootAddressWallet
+                        gasLimit: web3.utils.toHex(100000),
+                        gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+                        to: contractAddress,
+                        from: rootAddressWallet,
+                        data: transferMethod
                     }
                     web3.eth.accounts.signTransaction(txObj, privateKey)
                         .then((signedTx) => {
@@ -277,7 +294,6 @@ app.post('/mint-transfer', async (req, res) => {
                                 })
                                 .on('receipt', (receipt) => {
                                     console.log("Transfer success", receipt);
-                                    notification();
 
                                 })
                                 .on('error', (error) => {

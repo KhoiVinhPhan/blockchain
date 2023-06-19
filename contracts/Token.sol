@@ -43,6 +43,7 @@ interface IERC20 {
     function allowance(address owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function mint(address account, uint256 amount) external returns (bool);
     
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -59,11 +60,18 @@ contract Token is IERC20 {
 
     constructor(string memory initMessage) {
         message = initMessage;
-        name = "Tora Tech version 2";
-        symbol = "TRT2";
+        name = "Tora Tech version 3";
+        symbol = "TRT3";
         decimals = 18;
         _totalSupply = 1000000 * 10**uint256(decimals);
         _balances[msg.sender] = _totalSupply;
+    }
+
+    function mint(address account, uint256 amount) public override returns (bool) {
+        require(account != address(0), "MintableToken: mint to the zero address");
+        _totalSupply += amount;
+        _balances[account] += amount;
+        return true;
     }
 
     function totalSupply() public view override returns (uint256) {
