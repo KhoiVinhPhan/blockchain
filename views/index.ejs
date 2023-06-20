@@ -30,7 +30,7 @@
 				</div>
 			</div>
 
-			<div>
+			<!-- <div>
 				<h4>Mint and transfer token to address wallet</h4>
 				<div class="mt-1">
 					<label for="">Address wallet</label>
@@ -44,7 +44,7 @@
 						aria-describedby="button-addon2">
 				</div>
 				<button class="btn btn-warning mt-1" type="button" id="btnSendToken">Send token</button>
-			</div>
+			</div> -->
 
 			<div class="mt-3" id="transactionTokenRoot">
 
@@ -127,7 +127,7 @@
 							<input disabled placeholder="" type="" class="form-control" id="inputAddressWallet">
 						</div>
 						<div>
-							<button class="btn btn-primary" type="button" id="btnBuyToken">Buy</button>
+							<button class="btn btn-primary" type="button" id="btnBuyToken">Buy token</button>
 							<img width="25%"
 								src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0GLJh19sn6AVFEV_iv3YGW2_-xLz5p2IekA&usqp=CAU"
 								alt="">
@@ -160,11 +160,23 @@
 					if (accounts == '0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087') { // accout root
 						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (account Toratech)`;
 						document.getElementById('areaInfoRootToken').classList.remove("d-none"); // Show info token
+					} else if (accounts == '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d') { // account 3: teacher
+						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Teacher)`; // Add address wallet to element
+						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
+						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+						document.getElementById('listCourseShow').classList.add('d-none');
+					} else { // account 2: student
+						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Student)`; // Add address wallet to element
+						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
+						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
+					}
+					addressAccount = accounts;
 
-						// Pusher account root token
-						var channel = pusher.subscribe(`buy-course-channel-0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087`);
-						channel.bind(`buy-course-event-0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087`, function (data) {
-							console.log(data);
+					// Pusher notification
+					var channelBuyCourse = pusher.subscribe(`buy-course-channel-${accounts}`);
+					channelBuyCourse.bind(`buy-course-event-${accounts}`, function (data) {
+						console.log(data);
+						if (accounts == '0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087') { //root
 							Toastify({
 								text: `Notifications about blockchain transactions: ${data.message}`,
 								duration: 2000,
@@ -177,30 +189,19 @@
 								},
 								onClick: function () { } // Callback after click
 							}).showToast();
-
-
 							document.getElementById('transactionTokenRoot').innerHTML = '';
 							document.getElementById('transactionTokenRoot').innerHTML = `
-								<h4>Transaction</h4>
-								<p>A transaction is in progress</p>
-								<ul>
-									<li>Name course: <span>Javascript video basic</span></li>
-									<li>Buyer: <span>account 2</span></li>
-									<li>Recevier: <span>account 3</span></li>
-									<li>Price: <span>10000 TRT</span></li>
-									<li>Status: <span class="badge bg-primary">${data.message}</span></li>
-								</ul>
-							`;
-						});
-					} else if (accounts == '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d') { // account 3: teacher
-						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Teacher)`; // Add address wallet to element
-						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
-						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
-						document.getElementById('listCourseShow').classList.add('d-none');
-						// Pusher account root token
-						var channel = pusher.subscribe(`buy-course-channel-0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d`);
-						channel.bind(`buy-course-event-0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d`, function (data) {
-							console.log(JSON.stringify(data));
+									<h4>Transaction</h4>
+									<p>A transaction is in progress</p>
+									<ul>
+										<li>Name course: <span>Javascript video basic</span></li>
+										<li>Buyer: <span>account 2</span></li>
+										<li>Recevier: <span>account 3</span></li>
+										<li>Price: <span>10000 TRT</span></li>
+										<li>Status: <span class="badge bg-primary">${data.message}</span></li>
+									</ul>
+								`;
+						} else if (accounts == '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d') { //teacher
 							Toastify({
 								text: `Notifications about blockchain transactions: ${data.message}`,
 								duration: 2000,
@@ -216,23 +217,39 @@
 
 							document.getElementById('transactionTokenTeacher').innerHTML = '';
 							document.getElementById('transactionTokenTeacher').innerHTML = `
-								<h4>Transaction</h4>
-								<p>A transaction is in progress</p>
-								<ul>
-									<li>Name course: <span>Javascript video basic</span></li>
-									<li>Buyer: <span>account 2</span></li>
-									<li>Recevier: <span>account 3</span></li>
-									<li>Total: <span>10000 TRT (You receive: 7000 TRT) (30% fee)</span></li>
-									<li>Status: <span class="badge bg-primary">${data.message}</span></li>
-								</ul>
-							`;
-						});
-					} else {
-						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Student)`; // Add address wallet to element
-						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
-						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
-					}
-					addressAccount = accounts;
+									<h4>Transaction</h4>
+									<p>A transaction is in progress</p>
+									<ul>
+										<li>Name course: <span>Javascript video basic</span></li>
+										<li>Buyer: <span>account 2</span></li>
+										<li>Recevier: <span>account 3</span></li>
+										<li>Total: <span>10000 TRT (You receive: 7000 TRT) (30% fee)</span></li>
+										<li>Status: <span class="badge bg-primary">${data.message}</span></li>
+									</ul>
+								`;
+						} else { //student
+
+						}
+					});
+
+					var channelBuyToken = pusher.subscribe(`buy-token-channel-${accounts}`);
+					channelBuyToken.bind(`buy-token-event-${accounts}`, function (data) {
+						console.log(data);
+						Toastify({
+							text: `${data.message}`,
+							duration: 2000,
+							newWindow: true,
+							gravity: "top", // `top` or `bottom`
+							position: "right", // `left`, `center` or `right`
+							stopOnFocus: true, // Prevents dismissing of toast on hover
+							style: {
+								background: "#00b09b",
+							},
+							onClick: function () { } // Callback after click
+						}).showToast();
+						document.getElementById('btnBuyToken').innerHTML = 'Buy token';
+						document.getElementById('btnBuyToken').disabled = false;
+					});
 				}
 			})
 			.catch((error) => {
@@ -350,6 +367,8 @@
 		// Button click event (buy token)
 		const btnBuyToken = document.getElementById('btnBuyToken');
 		btnBuyToken.addEventListener('click', () => {
+			document.getElementById('btnBuyToken').innerHTML = 'Processing...';
+			document.getElementById('btnBuyToken').disabled = true;
 			const params = {
 				number: document.getElementById('formNumberPayment').value,
 				amount: document.getElementById('formAmountPayment').value,
@@ -368,7 +387,7 @@
 			axios.post('http://localhost:3000/payment-coin', params)
 				.then(response => {
 					const data = response.data;
-					alert('Success payment, check your wallet');
+					console.log(data);
 				})
 				.catch(error => {
 					console.error(error);
@@ -376,27 +395,27 @@
 		});
 
 		// Button click event (send token by mint)
-		const btnSendToken = document.getElementById('btnSendToken');
-		btnSendToken.addEventListener('click', () => {
-			const params = {
-				addressReceiver: document.getElementById('addressReceiver').value,
-				valueToken: document.getElementById('amountSendToken').value,
-			};
+		// const btnSendToken = document.getElementById('btnSendToken');
+		// btnSendToken.addEventListener('click', () => {
+		// 	const params = {
+		// 		addressReceiver: document.getElementById('addressReceiver').value,
+		// 		valueToken: document.getElementById('amountSendToken').value,
+		// 	};
 
-			if (params.addressReceiver == '') {
-				alert('addressReceiver require input');
-				return false;
-			}
+		// 	if (params.addressReceiver == '') {
+		// 		alert('addressReceiver require input');
+		// 		return false;
+		// 	}
 
-			axios.post('http://localhost:3000/mint-transfer', params)
-				.then(response => {
-					const data = response.data;
-					console.log("EJS: ", data);
-				})
-				.catch(error => {
-					console.error(error);
-				});
-		});
+		// 	axios.post('http://localhost:3000/mint-transfer', params)
+		// 		.then(response => {
+		// 			const data = response.data;
+		// 			console.log("EJS: ", data);
+		// 		})
+		// 		.catch(error => {
+		// 			console.error(error);
+		// 		});
+		// });
 
 		// Button click event (approve)
 		// const getBtnApprove = document.getElementById('btnApprove');
@@ -449,19 +468,19 @@
 					console.log(data);
 					if (data.status) {
 						Toastify({
-								text: `You have successfully purchased the course`,
-								duration: 2000,
-								newWindow: true,
-								gravity: "top", // `top` or `bottom`
-								position: "right", // `left`, `center` or `right`
-								stopOnFocus: true, // Prevents dismissing of toast on hover
-								style: {
-									background: "#00b09b",
-								},
-								onClick: function () { } // Callback after click
-							}).showToast();
-							document.getElementById('btnTransferFrom').innerHTML = 'Complete!';
-							document.getElementById('btnTransferFrom').disabled = true;
+							text: `You have successfully purchased the course`,
+							duration: 2000,
+							newWindow: true,
+							gravity: "top", // `top` or `bottom`
+							position: "right", // `left`, `center` or `right`
+							stopOnFocus: true, // Prevents dismissing of toast on hover
+							style: {
+								background: "#00b09b",
+							},
+							onClick: function () { } // Callback after click
+						}).showToast();
+						document.getElementById('btnTransferFrom').innerHTML = 'Complete!';
+						document.getElementById('btnTransferFrom').disabled = true;
 					}
 				})
 				.catch(error => {

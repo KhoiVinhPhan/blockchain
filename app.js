@@ -76,18 +76,17 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
 
 
             const params = {
-				addressReceiver: metadata.addressWallet,
-				valueToken: amount,
-			};
+                addressReceiver: metadata.addressWallet,
+                valueToken: amount,
+            };
 
-			axios.post('http://localhost:3000/mint-transfer', params)
-				.then(response => {
-					const data = response.data;
-					console.log("EJS: ", data);
-				})
-				.catch(error => {
-					console.error(error);
-				});
+            axios.post('http://localhost:3000/mint-transfer', params)
+                .then(response => {
+                    const data = response.data;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
 
 
 
@@ -197,11 +196,11 @@ app.get('/transfer', async (req, res) => {
             web3.eth.sendSignedTransaction(signedTransferTx.rawTransaction)
                 .on('transactionHash', (transferHash) => {
                     console.log('Transfer transaction hash:', transferHash);
-                   
+
                 })
                 .on('receipt', (transferReceipt) => {
                     console.log('Transfer transaction receipt:', transferReceipt);
-                   
+
                     // res.status(200).json({ status: true });
                     console.log('-----End API get transfer token: /transfer-----');
                 })
@@ -262,7 +261,7 @@ app.post('/mint-transfer', async (req, res) => {
     const mintMethod = contract.methods.mint(rootAddressWallet, amount);
     web3.eth.accounts.signTransaction(
         {
-            
+
             gasLimit: web3.utils.toHex(100000),
             gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
             to: contractAddress,
@@ -295,6 +294,20 @@ app.post('/mint-transfer', async (req, res) => {
                                 .on('receipt', (receipt) => {
                                     console.log("Transfer success", receipt);
 
+                                    //Notification
+                                    pusher.trigger(`buy-token-channel-${addressReceiver}`, `buy-token-event-${addressReceiver}`, {
+                                        message: `You have received ${valueToken} TRT tokens`
+                                    })
+                                        .then(() => {
+                                            console.log('Pusher event triggered successfully');
+                                            // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                                        })
+                                        .catch((error) => {
+                                            console.log('Error');
+                                            // res.status(500).json({ error: 'Internal server error' });
+                                        });
+
+                                    res.status(200).json({ status: true });
                                 })
                                 .on('error', (error) => {
                                     console.error('Error transfer', error);
