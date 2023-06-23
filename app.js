@@ -11,7 +11,7 @@ const Tx = require('ethereumjs-tx').Transaction;
 const MyContract = require("./artifacts/contracts/Token.sol/Token.json");
 const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
-const contractAddress = '0xa0aE7aa1768aa12C67003914eFC24b99aEdFD2b3'; // Enter your contract address here
+const contractAddress = '0x4a2aCC50D773210fD225070fB3aac71cC0Fd65C3'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
 const rootAddressWallet = "0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087"; // Address wallet account root(tora)
 const privateKey = '52da2c4e7ad4c58cd693f5e9f4aa6408d388529365c08514203ae446e0e23384'; // private key of account root (tora)
@@ -107,13 +107,20 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
 });
 
 
-app.get('/', function (req, res) {
+app.get('/', async function (req, res) {
     // Define the variables to be passed to the template
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
+    let arrayReservation = [];
+    for (let i = 1; i <= await contract.methods.reservationCounter().call(); i++) {
+        let reservation = await contract.methods.reservations(i).call();
+        arrayReservation.push(reservation);
+    }
+    // console.log(arrayReservation);
+   
 
     // Render the 'index' template with the provided variables
-    res.render('index', { pageTitle, currentDate });
+    res.render('index', { pageTitle, currentDate, arrayReservation });
 });
 
 app.get('/message', async (req, res) => {
@@ -148,6 +155,13 @@ app.get('/symbol', async (req, res) => {
     console.log('call API get symbol: /symbol');
     const symbol = await contract.methods.symbol().call();
     res.json({ symbol });
+});
+
+// Get token show-reservation-couter
+app.get('/show-reservation-couter', async (req, res) => {
+    console.log('call API get: /show-reservation-couter');
+    const showReservationCounter = await contract.methods.reservationCounter().call();
+    res.json({ showReservationCounter });
 });
 
 // Get token allowance
@@ -530,6 +544,147 @@ app.post('/transfer-from', async (req, res) => {
     console.log('----- End call API: /transfer-from -----');
 
 });
+
+app.post('/create-reservation', async (req, res) => {
+    // address student
+    const student = '0x35755b2c2e2b97061f3401185a2ed55960eb4b6d';
+
+    // address teacher
+    const teacher = '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d';
+
+    // Số lượng token
+    const amount = web3.utils.toHex(web3.utils.toWei('10000'));
+
+    // date
+    const date = 123456789;
+
+    // Khởi tạo phương thức buyCourse
+    const createReservationMethod = contract.methods.createReservation(teacher, student, amount, date);
+
+    // Tạo đối tượng giao dịch createReservation
+    const createReservationTxObject = {
+        gasLimit: web3.utils.toHex(500000),
+        gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+        to: contractAddress,
+        from: rootAddressWallet,
+        data: createReservationMethod.encodeABI()
+    };
+
+    // Ký giao dịch createReservation
+    console.log('Ký giao dịch createReservation');
+    web3.eth.accounts.signTransaction(createReservationTxObject, privateKey)
+        .then((signedReservationTx) => {
+            // Gửi giao dịch createReservation đã ký
+            console.log('Gửi giao dịch createReservation đã ký');
+            web3.eth.sendSignedTransaction(signedReservationTx.rawTransaction)
+                .on('transactionHash', (reservationHash) => {
+                    console.log('createReservation transaction hash:', reservationHash);
+                })
+                .on('receipt', (reservationReceipt) => {
+                    console.log('createReservation transaction receipt:', reservationReceipt);
+                    //Notification root
+                    pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
+                        message: 'New transaction',
+                        reId: '1',
+                        status: 'Procesing...',
+                        amount: amount,
+                        fromAddress: student,
+                        toAddress: teacher
+                    })
+                        .then(() => {
+                            console.log('Pusher event triggered successfully');
+                            // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                        })
+                        .catch((error) => {
+                            console.log('Error');
+                            // res.status(500).json({ error: 'Internal server error' });
+                        });
+                    //Notification teacher
+                    pusher.trigger(`buy-course-channel-${teacher}`, `buy-course-event-${teacher}`, {
+                        message: 'New transaction',
+                        reId: '1',
+                        status: 'Procesing...',
+                        amount: amount,
+                        fromAddress: student,
+                        toAddress: teacher
+                    })
+                        .then(() => {
+                            console.log('Pusher event triggered successfully');
+                            // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                        })
+                        .catch((error) => {
+                            console.log('Error');
+                            // res.status(500).json({ error: 'Internal server error' });
+                        });
+                    // console.log('data: ', reservationReceipt.events.ReservationCreated);
+                    res.status(200).json({ status: true, reservationId: 2 });
+                })
+                .on('error', (error) => {
+                    console.error('createReservation transaction error:', error);
+                });
+        })
+        .catch((error) => {
+            console.error('Sign createReservation transaction error:', error);
+        });
+
+})
+
+app.post('/fulfill-reservation', async (req, res) => {
+
+    // reservation id
+    const reservationId = 7;
+
+    // Khởi tạo phương thức fulfillReservation
+    const fullfillReservationMethod = contract.methods.fulfillReservation(reservationId);
+
+    // Tạo đối tượng giao dịch fulfillReservation
+    const fulfillReservationTxObject = {
+        gasLimit: web3.utils.toHex(500000),
+        gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+        to: contractAddress,
+        from: rootAddressWallet,
+        data: fullfillReservationMethod.encodeABI()
+    };
+
+    // Ký giao dịch fulfillReservation
+    console.log('Ký giao dịch fulfillReservation');
+    web3.eth.accounts.signTransaction(fulfillReservationTxObject, privateKey)
+        .then((signedReservationTx) => {
+            // Gửi giao dịch createReservation đã ký
+            console.log('Gửi giao dịch fulfillReservation đã ký');
+            web3.eth.sendSignedTransaction(signedReservationTx.rawTransaction)
+                .on('transactionHash', (reservationHash) => {
+                    console.log('createReservation transaction hash:', reservationHash);
+                })
+                .on('receipt', (reservationReceipt) => {
+                    console.log('createReservation transaction receipt:', reservationReceipt);
+                    //Notification root
+                    pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
+                        message: 'Khoa hoc da hoan thanh, token transfer success',
+                        status: 'Done'
+                    })
+                        .then(() => {
+                            console.log('Pusher event triggered successfully');
+                            // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                        })
+                        .catch((error) => {
+                            console.log('Error');
+                            // res.status(500).json({ error: 'Internal server error' });
+                        });
+
+                    // console.log('data: ', reservationReceipt.events.ReservationCreated);
+                    res.status(200).json({ status: true });
+                })
+                .on('error', (error) => {
+                    console.error('createReservation transaction error:', error);
+                });
+        })
+        .catch((error) => {
+            console.error('Sign createReservation transaction error:', error);
+        });
+
+})
+
 
 app.post('/approve-transfer', async (req, res) => {
     // const { spender, amount } = req.body;

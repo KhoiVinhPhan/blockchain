@@ -58,14 +58,50 @@ contract Token is IERC20 {
     mapping(address => mapping(address => uint256)) private _allowances;
     string public message;
 
+    struct Reservation {
+        uint256 id;
+        address admin;
+        address teacher;
+        address student;
+        uint256 date;
+        uint256 amount;
+        bool paid;
+        bool fulfilled;
+    }
+
+    mapping(uint256 => Reservation) public reservations;
+    uint256 public reservationCounter;
+
+    event ReservationCreated(uint256 id, address admin, address teacher, address student, uint256 date, uint256 amount);
+
     constructor(string memory initMessage) {
         message = initMessage;
-        name = "Tora Tech version 3";
-        symbol = "TRT3";
+        name = "Tora Tech version 8";
+        symbol = "VIN";
         decimals = 18;
         _totalSupply = 1000000 * 10**uint256(decimals);
         _balances[msg.sender] = _totalSupply;
     }
+
+    function createReservation(address teacher, address student, uint256 amount, uint256 date) external payable returns(uint256) {
+        require(amount > 0, "Gia tri phai lon hon 0");
+        reservationCounter++;
+        reservations[reservationCounter] = Reservation(reservationCounter, msg.sender, teacher, student, date, amount, false, false); // create 1 Reservation vào reservations
+        _balances[student] -= amount; // tru token cua student
+        emit ReservationCreated(reservationCounter, msg.sender, teacher, student, date, amount);
+        return reservationCounter;
+    }
+
+    function fulfillReservation(uint256 reservationId) external payable returns(bool) {
+        Reservation storage reservation = reservations[reservationId];
+        require(!reservation.fulfilled, "Dat cho da duoc thuc hien");
+
+        reservation.fulfilled = true;
+        // transfer token for teacher
+        _balances[reservation.teacher] += reservation.amount;
+        return true;
+    }
+
 
     function mint(address account, uint256 amount) public override returns (bool) {
         require(account != address(0), "MintableToken: mint to the zero address");
