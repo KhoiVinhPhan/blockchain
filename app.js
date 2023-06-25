@@ -112,12 +112,12 @@ app.get('/', async function (req, res) {
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
     let arrayReservation = [];
-    for (let i = 1; i <= await contract.methods.reservationCounter().call(); i++) {
+    for (let i = 7; i <= await contract.methods.reservationCounter().call(); i++) {
         let reservation = await contract.methods.reservations(i).call();
         arrayReservation.push(reservation);
     }
     // console.log(arrayReservation);
-   
+
 
     // Render the 'index' template with the provided variables
     res.render('index', { pageTitle, currentDate, arrayReservation });
@@ -582,41 +582,68 @@ app.post('/create-reservation', async (req, res) => {
                 })
                 .on('receipt', (reservationReceipt) => {
                     console.log('createReservation transaction receipt:', reservationReceipt);
-                    //Notification root
-                    pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
-                        message: 'New transaction',
-                        reId: '1',
-                        status: 'Procesing...',
-                        amount: amount,
-                        fromAddress: student,
-                        toAddress: teacher
-                    })
-                        .then(() => {
-                            console.log('Pusher event triggered successfully');
-                            // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                    console.log('blockNumber: ', reservationReceipt.blockNumber);
+                    console.log('status: ', reservationReceipt.status);
+
+                    const eventName = 'ReservationCreated';
+                    const eventFilter = {
+                        fromBlock: 0, // Starting block number
+                        toBlock: 'latest', // Ending block number (or 'latest' for the most recent block)
+                        filter: {
+                            id: '20', // Filter criteria, replace with your desired value
+                        },
+                    };
+
+                    contract.getPastEvents(eventName, eventFilter)
+                        .then((events) => {
+                            // Process the events
+                            events.forEach((event) => {
+                                console.log('Event:', event.event);
+                                console.log('Block number:', event.blockNumber);
+                                console.log('Transaction hash:', event.transactionHash);
+                                console.log('Event data:', event.returnValues);
+                                console.log('------------------------');
+                            });
                         })
                         .catch((error) => {
-                            console.log('Error');
-                            // res.status(500).json({ error: 'Internal server error' });
+                            console.error('Error:', error);
                         });
-                    //Notification teacher
-                    pusher.trigger(`buy-course-channel-${teacher}`, `buy-course-event-${teacher}`, {
-                        message: 'New transaction',
-                        reId: '1',
-                        status: 'Procesing...',
-                        amount: amount,
-                        fromAddress: student,
-                        toAddress: teacher
-                    })
-                        .then(() => {
-                            console.log('Pusher event triggered successfully');
-                            // res.status(200).json({ message: 'Pusher event triggered successfully' });
-                        })
-                        .catch((error) => {
-                            console.log('Error');
-                            // res.status(500).json({ error: 'Internal server error' });
-                        });
-                    // console.log('data: ', reservationReceipt.events.ReservationCreated);
+
+                    // //Notification root
+                    // pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
+                    //     message: 'New transaction',
+                    //     reId: '1',
+                    //     status: 'Procesing...',
+                    //     amount: amount,
+                    //     fromAddress: student,
+                    //     toAddress: teacher
+                    // })
+                    //     .then(() => {
+                    //         console.log('Pusher event triggered successfully');
+                    //         // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                    //     })
+                    //     .catch((error) => {
+                    //         console.log('Error');
+                    //         // res.status(500).json({ error: 'Internal server error' });
+                    //     });
+                    // //Notification teacher
+                    // pusher.trigger(`buy-course-channel-${teacher}`, `buy-course-event-${teacher}`, {
+                    //     message: 'New transaction',
+                    //     reId: '1',
+                    //     status: 'Procesing...',
+                    //     amount: amount,
+                    //     fromAddress: student,
+                    //     toAddress: teacher
+                    // })
+                    //     .then(() => {
+                    //         console.log('Pusher event triggered successfully');
+                    //         // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                    //     })
+                    //     .catch((error) => {
+                    //         console.log('Error');
+                    //         // res.status(500).json({ error: 'Internal server error' });
+                    //     });
+                    // // console.log('data: ', reservationReceipt.events.ReservationCreated);
                     res.status(200).json({ status: true, reservationId: 2 });
                 })
                 .on('error', (error) => {
