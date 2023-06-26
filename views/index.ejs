@@ -57,26 +57,34 @@
 						</tr>
 					</thead>
 					<tbody>
-						<% for (let i = 0; i < arrayReservation.length; i++) { %>
-							<tr>
-								<th scope="row"><%= arrayReservation[i].id %></th>
+						<% for (let i=0; i < arrayReservation.length; i++) { %>
+							<tr data-id="<%= arrayReservation[i].id %>">
+								<td scope="row">
+									<%= arrayReservation[i].id %>
+								</td>
 								<td>
 									<% if (arrayReservation[i].fulfilled) { %>
 										Done
-									<% } else { %>
-										Processing
-									<% } %>
+										<% } else { %>
+											Processing
+											<% } %>
 								</td>
-								<td><%= arrayReservation[i].amount %></td>
-								<td><%= arrayReservation[i].student %></td>
-								<td><%= arrayReservation[i].teacher %></td>
+								<td>
+									<%= arrayReservation[i].amount / 1000000000000000000 %>
+								</td>
+								<td>
+									<%= arrayReservation[i].student %>
+								</td>
+								<td>
+									<%= arrayReservation[i].teacher %>
+								</td>
 							</tr>
-						<% } %>
-					
+							<% } %>
+
 					</tbody>
 				</table>
 			</div>
-			
+
 
 			<div class="mt-3" id="transactionTokenRoot">
 
@@ -177,6 +185,7 @@
 						<thead>
 							<tr>
 								<th scope="col">ReID</th>
+								<th scope="col">Action</th>
 								<th scope="col">Status</th>
 								<th scope="col">Amount</th>
 								<th scope="col">From address</th>
@@ -184,24 +193,40 @@
 							</tr>
 						</thead>
 						<tbody>
-							<% for (let i = 0; i < arrayReservation.length; i++) { %>
-								<% if (arrayReservation[i].teacher == '0xdF40Fa9834bf5E080843DCB9a3dc5E60A707397D') { %>
+							<% for (let i=0; i < arrayReservation.length; i++) { %>
+								<% if (arrayReservation[i].teacher=='0xdF40Fa9834bf5E080843DCB9a3dc5E60A707397D' ) { %>
 									<tr>
-										<th scope="row"><%= arrayReservation[i].id %></th>
+										<td scope="row">
+											<%= arrayReservation[i].id %>
+										</td>
+										<td>
+											<% if (arrayReservation[i].fulfilled) { %>
+												<button class="btn btn-default btn-sm" disabled>Close</button>
+												<% } else { %>
+													<button class="btn btn-warning btn-sm btnTeacherConfirm"
+														data-id=<%=arrayReservation[i].id %>>Confirm</button>
+													<% } %>
+										</td>
 										<td>
 											<% if (arrayReservation[i].fulfilled) { %>
 												Done
-											<% } else { %>
-												Processing
-											<% } %>
+												<% } else { %>
+													Processing
+													<% } %>
 										</td>
-										<td><%= arrayReservation[i].amount %></td>
-										<td><%= arrayReservation[i].student %></td>
-										<td><%= arrayReservation[i].teacher %></td>
+										<td>
+											<%= arrayReservation[i].amount / 1000000000000000000 %>
+										</td>
+										<td>
+											<%= arrayReservation[i].student %>
+										</td>
+										<td>
+											<%= arrayReservation[i].teacher %>
+										</td>
 									</tr>
-								<% } %>
-							<% } %>
-						
+									<% } %>
+										<% } %>
+
 						</tbody>
 					</table>
 				</div>
@@ -218,6 +243,7 @@
 	<!-- Include Axios library -->
 	<script>
 		var buttonTeacherConfirm = document.createElement("button");
+		buttonTeacherConfirm.classList.add('btn', 'btn-warning', 'btn-sm', 'btnTeacherConfirm');
 		buttonTeacherConfirm.innerHTML = "Confirm";
 		// Init - Check connected wallet
 		Pusher.logToConsole = true;
@@ -261,12 +287,13 @@
 								},
 								onClick: function () { } // Callback after click
 							}).showToast();
-							
+
 							// Lấy bảng từ DOM
 							const table = document.getElementById('tblListTransaction');
 
 							// Tạo một hàng mới
 							const newRow = document.createElement('tr');
+							newRow.setAttribute('data-id', data.reId);
 
 							// Tạo các ô trong hàng mới
 							const cell1 = document.createElement('td');
@@ -316,24 +343,27 @@
 								},
 								onClick: function () { } // Callback after click
 							}).showToast();
-							
+
 							// Lấy bảng từ DOM
 							const table = document.getElementById('tblListTransactionTeacher');
 
 							// Tạo một hàng mới
 							const newRow = document.createElement('tr');
 
-							// Tạo các ô trong hàng mới
+							// Tạo các ô trong hàng mới buttonTeacherConfirm
 							const cell1 = document.createElement('td');
 							cell1.textContent = data.reId;
 							const cell2 = document.createElement('td');
-							cell2.textContent = data.status;
+							buttonTeacherConfirm.setAttribute('data-id', data.reId);
+							cell2.appendChild(buttonTeacherConfirm)
 							const cell3 = document.createElement('td');
-							cell3.textContent = data.amount;
+							cell3.textContent = data.status;
 							const cell4 = document.createElement('td');
-							cell4.textContent = data.fromAddress;
+							cell4.textContent = data.amount;
 							const cell5 = document.createElement('td');
-							cell5.textContent = data.toAddress;
+							cell5.textContent = data.fromAddress;
+							const cell6 = document.createElement('td');
+							cell6.textContent = data.toAddress;
 
 							// Gắn các ô vào hàng mới
 							newRow.appendChild(cell1);
@@ -341,6 +371,7 @@
 							newRow.appendChild(cell3);
 							newRow.appendChild(cell4);
 							newRow.appendChild(cell5);
+							newRow.appendChild(cell6);
 
 							// Gắn hàng mới vào tbody của bảng
 							const tbody = table.querySelector('tbody');
@@ -382,6 +413,47 @@
 						}).showToast();
 						document.getElementById('btnBuyToken').innerHTML = 'Buy token';
 						document.getElementById('btnBuyToken').disabled = false;
+					});
+
+					var channelFulfillCourse = pusher.subscribe(`fulfill-course-channel-${accounts}`);
+					channelFulfillCourse.bind(`fulfill-course-event-${accounts}`, function (data) {
+						console.log(data);
+						if (accounts == '0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087') { // root
+							Toastify({
+								text: `${data.message}`,
+								duration: 2000,
+								newWindow: true,
+								gravity: "top", // `top` or `bottom`
+								position: "right", // `left`, `center` or `right`
+								stopOnFocus: true, // Prevents dismissing of toast on hover
+								style: {
+									background: "#00b09b",
+								},
+								onClick: function () { } // Callback after click
+							}).showToast();
+
+
+							// Lấy thẻ <table> đầu tiên trên trang (hoặc thay bằng phương thức khác để chọn bảng cụ thể)
+							const table = document.getElementById('tblListTransaction');
+
+							// Lấy danh sách các thẻ <tr> trong bảng
+							const rows = table.getElementsByTagName('tr');
+
+							// Lặp qua từng thẻ <tr>
+							for (let i = 0; i <= rows.length; i++) {
+								const row = rows[i];
+
+								// Lấy giá trị của thuộc tính "attributeName" của thẻ <tr>
+								const attrValue = row.getAttribute('data-id');
+
+								if (attrValue == data.reservationId) {
+									const td1 = row.getElementsByTagName('td')[1];
+									td1.innerHTML = 'Done';
+								}
+							}
+
+						}
+
 					});
 				}
 			})
@@ -541,65 +613,6 @@
 				});
 		});
 
-		// Button click event (send token by mint)
-		// const btnSendToken = document.getElementById('btnSendToken');
-		// btnSendToken.addEventListener('click', () => {
-		// 	const params = {
-		// 		addressReceiver: document.getElementById('addressReceiver').value,
-		// 		valueToken: document.getElementById('amountSendToken').value,
-		// 	};
-
-		// 	if (params.addressReceiver == '') {
-		// 		alert('addressReceiver require input');
-		// 		return false;
-		// 	}
-
-		// 	axios.post('http://localhost:3000/mint-transfer', params)
-		// 		.then(response => {
-		// 			const data = response.data;
-		// 			console.log("EJS: ", data);
-		// 		})
-		// 		.catch(error => {
-		// 			console.error(error);
-		// 		});
-		// });
-
-		// Button click event (approve)
-		// const getBtnApprove = document.getElementById('btnApprove');
-		// getBtnApprove.addEventListener('click', () => {
-		// 	const params = {
-		// 		spender: addressAccount,
-		// 		amount: '1000',
-		// 	};
-
-		// 	axios.post('http://localhost:3000/approve', params)
-		// 		.then(response => {
-		// 			const data = response.data;
-		// 			console.log(data);
-		// 		})
-		// 		.catch(error => {
-		// 			console.log('error approve');
-		// 		});
-		// }); 
-
-		// btnIncreaseAllowance
-		// const getBtnIncreaseAllowance = document.getElementById('btnIncreaseAllowance');
-		// getBtnIncreaseAllowance.addEventListener('click', () => {
-		// 	const params = {
-		// 		spender: addressAccount,
-		// 		amount: '1000',
-		// 	};
-
-		// 	axios.post('http://localhost:3000/increase-allownce', params)
-		// 		.then(response => {
-		// 			const data = response.data;
-		// 			console.log(data);
-		// 		})
-		// 		.catch(error => {
-		// 			console.log('error approve');
-		// 		});
-		// }); 
-
 		// Button click event (transferfrom)
 		const getBtnTransferFrom = document.getElementById('btnTransferFrom');
 		getBtnTransferFrom.addEventListener('click', () => {
@@ -639,12 +652,14 @@
 				});
 		});
 
-		// Button click event (btnTeacherConfirm)
+		// Button click event (btnTeacherConfirm) when realtime
 		buttonTeacherConfirm.addEventListener("click", function () {
-			document.getElementById('btnTeacherConfirm').innerHTML = 'Processing...';
-			document.getElementById('btnTeacherConfirm').disabled = true;
+			const itemId = buttonTeacherConfirm.getAttribute('data-id');
+			console.log('Item clicked function 1:', itemId);
+			buttonTeacherConfirm.innerHTML = 'Processing...';
+			buttonTeacherConfirm.disabled = true;
 			const params = {
-				reservationId: 1,
+				reservationId: itemId,
 			};
 
 			axios.post('http://localhost:3000/fulfill-reservation', params)
@@ -664,12 +679,71 @@
 							},
 							onClick: function () { } // Callback after click
 						}).showToast();
-						document.getElementById('btnTeacherConfirm').innerHTML = 'Done';
+						buttonTeacherConfirm.classList.remove('btn-warning');
+						buttonTeacherConfirm.classList.add('btn-default');
+						buttonTeacherConfirm.innerHTML = 'Close';
+
+						// Get the parent td of the clicked item
+						const td = buttonTeacherConfirm.parentNode;
+						const row = td.parentNode;
+
+						// Get the second <td> element within the row (index 1) and modify its text
+						const td2 = row.getElementsByTagName('td')[2];
+						td2.innerHTML = 'Done';
 					}
 				})
 				.catch(error => {
 					console.log('error transfer');
 				});
+		});
+
+		// btnTeacherConfirm
+		const btnTeacherConfirm = document.getElementsByClassName('btnTeacherConfirm');
+		Array.from(btnTeacherConfirm).forEach(item => {
+			item.addEventListener('click', () => {
+				const itemId = item.getAttribute('data-id');
+				console.log('Item clicked function 2:', itemId);
+				item.innerHTML = 'Processing...';
+				item.disabled = true;
+
+				const params = {
+					reservationId: itemId,
+				};
+
+				axios.post('http://localhost:3000/fulfill-reservation', params)
+					.then(response => {
+						const data = response.data;
+						console.log(data);
+						if (data.status) {
+							Toastify({
+								text: `Transfer token success, please check wallet`,
+								duration: 2000,
+								newWindow: true,
+								gravity: "top", // `top` or `bottom`
+								position: "right", // `left`, `center` or `right`
+								stopOnFocus: true, // Prevents dismissing of toast on hover
+								style: {
+									background: "#00b09b",
+								},
+								onClick: function () { } // Callback after click
+							}).showToast();
+							item.classList.remove('btn-warning');
+							item.classList.add('btn-default');
+							item.innerHTML = 'Close';
+
+							// Get the parent td of the clicked item
+							const td = item.parentNode;
+							const row = td.parentNode;
+
+							// Get the second <td> element within the row (index 1) and modify its text
+							const td2 = row.getElementsByTagName('td')[2];
+							td2.innerHTML = 'Done';
+						}
+					})
+					.catch(error => {
+						console.log('error transfer');
+					});
+			});
 		});
 
 	</script>

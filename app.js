@@ -112,7 +112,7 @@ app.get('/', async function (req, res) {
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
     let arrayReservation = [];
-    for (let i = 7; i <= await contract.methods.reservationCounter().call(); i++) {
+    for (let i = 39; i <= await contract.methods.reservationCounter().call(); i++) {
         let reservation = await contract.methods.reservations(i).call();
         arrayReservation.push(reservation);
     }
@@ -554,6 +554,7 @@ app.post('/create-reservation', async (req, res) => {
 
     // Số lượng token
     const amount = web3.utils.toHex(web3.utils.toWei('10000'));
+    const amountFormat = '10000';
 
     // date
     const date = 123456789;
@@ -587,64 +588,62 @@ app.post('/create-reservation', async (req, res) => {
 
                     const eventName = 'ReservationCreated';
                     const eventFilter = {
-                        fromBlock: 0, // Starting block number
-                        toBlock: 'latest', // Ending block number (or 'latest' for the most recent block)
+                        fromBlock: reservationReceipt.blockNumber, // '0' or 'latest' or 'blockNumber' Starting block number
+                        toBlock: reservationReceipt.blockNumber, // Ending block number (or 'latest' for the most recent block)
                         filter: {
-                            id: '20', // Filter criteria, replace with your desired value
+                            // id: '20', // Filter criteria, replace with your desired value
                         },
                     };
 
                     contract.getPastEvents(eventName, eventFilter)
                         .then((events) => {
+                            console.log('id: ', events[0].returnValues.id);
                             // Process the events
-                            events.forEach((event) => {
-                                console.log('Event:', event.event);
-                                console.log('Block number:', event.blockNumber);
-                                console.log('Transaction hash:', event.transactionHash);
-                                console.log('Event data:', event.returnValues);
-                                console.log('------------------------');
-                            });
+                            // events.forEach((event) => {
+                            //     console.log('Event:', event.event);
+                            //     console.log('Block number:', event.blockNumber);
+                            //     console.log('Transaction hash:', event.transactionHash);
+                            //     console.log('Event data:', event.returnValues);
+                            //     console.log('------------------------');
+                            // });
+
+                            //Notification root
+                            pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
+                                message: 'New transaction',
+                                reId: events[0].returnValues.id,
+                                status: 'Processing',
+                                amount: amountFormat,
+                                fromAddress: student,
+                                toAddress: teacher
+                            })
+                                .then(() => {
+                                    console.log('Pusher event triggered successfully');
+                                    // res.status(200).json({ message: 'Pusher event triggered successfully' });
+                                })
+                                .catch((error) => {
+                                    console.log('Error');
+                                    // res.status(500).json({ error: 'Internal server error' });
+                                });
+                            //Notification teacher
+                            pusher.trigger(`buy-course-channel-${teacher}`, `buy-course-event-${teacher}`, {
+                                message: 'New transaction',
+                                reId: events[0].returnValues.id,
+                                status: 'Processing',
+                                amount: amountFormat,
+                                fromAddress: student,
+                                toAddress: teacher
+                            })
+                                .then(() => {
+                                    console.log('Pusher event triggered successfully');
+                                })
+                                .catch((error) => {
+                                    console.log('Error');
+                                });
+                            res.status(200).json({ status: true, reservationId: events[0].returnValues.id });
                         })
                         .catch((error) => {
                             console.error('Error:', error);
                         });
-
-                    // //Notification root
-                    // pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
-                    //     message: 'New transaction',
-                    //     reId: '1',
-                    //     status: 'Procesing...',
-                    //     amount: amount,
-                    //     fromAddress: student,
-                    //     toAddress: teacher
-                    // })
-                    //     .then(() => {
-                    //         console.log('Pusher event triggered successfully');
-                    //         // res.status(200).json({ message: 'Pusher event triggered successfully' });
-                    //     })
-                    //     .catch((error) => {
-                    //         console.log('Error');
-                    //         // res.status(500).json({ error: 'Internal server error' });
-                    //     });
-                    // //Notification teacher
-                    // pusher.trigger(`buy-course-channel-${teacher}`, `buy-course-event-${teacher}`, {
-                    //     message: 'New transaction',
-                    //     reId: '1',
-                    //     status: 'Procesing...',
-                    //     amount: amount,
-                    //     fromAddress: student,
-                    //     toAddress: teacher
-                    // })
-                    //     .then(() => {
-                    //         console.log('Pusher event triggered successfully');
-                    //         // res.status(200).json({ message: 'Pusher event triggered successfully' });
-                    //     })
-                    //     .catch((error) => {
-                    //         console.log('Error');
-                    //         // res.status(500).json({ error: 'Internal server error' });
-                    //     });
-                    // // console.log('data: ', reservationReceipt.events.ReservationCreated);
-                    res.status(200).json({ status: true, reservationId: 2 });
                 })
                 .on('error', (error) => {
                     console.error('createReservation transaction error:', error);
@@ -657,9 +656,9 @@ app.post('/create-reservation', async (req, res) => {
 })
 
 app.post('/fulfill-reservation', async (req, res) => {
-
     // reservation id
-    const reservationId = 7;
+
+    const reservationId = req.body.reservationId;
 
     // Khởi tạo phương thức fulfillReservation
     const fullfillReservationMethod = contract.methods.fulfillReservation(reservationId);
@@ -686,21 +685,18 @@ app.post('/fulfill-reservation', async (req, res) => {
                 .on('receipt', (reservationReceipt) => {
                     console.log('createReservation transaction receipt:', reservationReceipt);
                     //Notification root
-                    pusher.trigger(`buy-course-channel-${rootAddressWallet}`, `buy-course-event-${rootAddressWallet}`, {
-                        message: 'Khoa hoc da hoan thanh, token transfer success',
-                        status: 'Done'
+                    pusher.trigger(`fulfill-course-channel-${rootAddressWallet}`, `fulfill-course-event-${rootAddressWallet}`, {
+                        message: `Reservation Id: ${reservationId} : done`,
+                        status: 'Done',
+                        reservationId: reservationId
                     })
                         .then(() => {
                             console.log('Pusher event triggered successfully');
-                            // res.status(200).json({ message: 'Pusher event triggered successfully' });
                         })
                         .catch((error) => {
                             console.log('Error');
-                            // res.status(500).json({ error: 'Internal server error' });
                         });
-
-                    // console.log('data: ', reservationReceipt.events.ReservationCreated);
-                    res.status(200).json({ status: true });
+                    res.status(200).json({ status: true});
                 })
                 .on('error', (error) => {
                     console.error('createReservation transaction error:', error);
