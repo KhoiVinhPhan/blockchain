@@ -8,10 +8,10 @@ const Pusher = require("pusher");
 const Tx = require('ethereumjs-tx').Transaction;
 
 // Smart contract
-const MyContract = require("./artifacts/contracts/Token.sol/Token.json");
+const MyContract = require("./artifacts/contracts/Token.sol/Token.json");``
 const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
-const contractAddress = '0x4a2aCC50D773210fD225070fB3aac71cC0Fd65C3'; // Enter your contract address here
+const contractAddress = '0x06Dad856AdBB0cc0bfa4612d921A9446293302BE'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
 const rootAddressWallet = "0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087"; // Address wallet account root(tora)
 const privateKey = '52da2c4e7ad4c58cd693f5e9f4aa6408d388529365c08514203ae446e0e23384'; // private key of account root (tora)
@@ -112,7 +112,7 @@ app.get('/', async function (req, res) {
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
     let arrayReservation = [];
-    for (let i = 39; i <= await contract.methods.reservationCounter().call(); i++) {
+    for (let i = 1; i <= await contract.methods.reservationCounter().call(); i++) {
         let reservation = await contract.methods.reservations(i).call();
         arrayReservation.push(reservation);
     }
@@ -704,6 +704,59 @@ app.post('/fulfill-reservation', async (req, res) => {
         })
         .catch((error) => {
             console.error('Sign createReservation transaction error:', error);
+        });
+
+})
+
+app.post('/cancel-reservation', async (req, res) => {
+    // reservation id
+
+    const reservationId = req.body.reservationId;
+
+    // Khởi tạo phương thức canCelReservation
+    const canCelReservationMethod = contract.methods.canCelReservation(reservationId);
+
+    // Tạo đối tượng giao dịch canCelReservation
+    const canCelReservationTxObject = {
+        gasLimit: web3.utils.toHex(500000),
+        gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+        to: contractAddress,
+        from: rootAddressWallet,
+        data: canCelReservationMethod.encodeABI()
+    };
+
+    // Ký giao dịch canCelReservation
+    console.log('Ký giao dịch canCelReservation');
+    web3.eth.accounts.signTransaction(canCelReservationTxObject, privateKey)
+        .then((signedReservationTx) => {
+            // Gửi giao dịch canCelReservation đã ký
+            console.log('Gửi giao dịch canCelReservation đã ký');
+            web3.eth.sendSignedTransaction(signedReservationTx.rawTransaction)
+                .on('transactionHash', (reservationHash) => {
+                    console.log('canCelReservation transaction hash:', reservationHash);
+                })
+                .on('receipt', (reservationReceipt) => {
+                    console.log('canCelReservation transaction receipt:', reservationReceipt);
+                    //Notification root
+                    pusher.trigger(`cancel-course-channel-${rootAddressWallet}`, `cancel-course-event-${rootAddressWallet}`, {
+                        message: `Reservation Id: ${reservationId} : done`,
+                        status: 'Done',
+                        reservationId: reservationId
+                    })
+                        .then(() => {
+                            console.log('Pusher event triggered successfully');
+                        })
+                        .catch((error) => {
+                            console.log('Error');
+                        });
+                    res.status(200).json({ status: true});
+                })
+                .on('error', (error) => {
+                    console.error('canCelReservation transaction error:', error);
+                });
+        })
+        .catch((error) => {
+            console.error('Sign canCelReservation transaction error:', error);
         });
 
 })

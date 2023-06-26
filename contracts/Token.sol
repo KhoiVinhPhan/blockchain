@@ -76,8 +76,8 @@ contract Token is IERC20 {
 
     constructor(string memory initMessage) {
         message = initMessage;
-        name = "Tora Tech version 8";
-        symbol = "VIN";
+        name = "Tora Tech version 9";
+        symbol = "TTT";
         decimals = 18;
         _totalSupply = 1000000 * 10**uint256(decimals);
         _balances[msg.sender] = _totalSupply;
@@ -94,11 +94,19 @@ contract Token is IERC20 {
 
     function fulfillReservation(uint256 reservationId) external payable returns(bool) {
         Reservation storage reservation = reservations[reservationId];
-        require(!reservation.fulfilled, "Dat cho da duoc thuc hien");
+        require(!reservation.fulfilled, "fulfill da duoc thuc hien");
 
         reservation.fulfilled = true;
-        // transfer token for teacher
-        _balances[reservation.teacher] += reservation.amount;
+        _balances[reservation.teacher] += reservation.amount; // transfer token for teacher
+        return true;
+    }
+
+    function canCelReservation(uint256 reservationId) external payable returns(bool) {
+        Reservation storage reservation = reservations[reservationId];
+        require(!reservation.paid, "Cancel da duoc thuc hien");
+
+        reservation.paid = true;
+        _balances[reservation.student] += reservation.amount; // refund token for student
         return true;
     }
 
