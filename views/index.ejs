@@ -66,8 +66,12 @@
 									<% if (arrayReservation[i].fulfilled) { %>
 										Done
 										<% } else { %>
-											Processing
-											<% } %>
+											<% if (arrayReservation[i].paid) { %>
+												Cancel
+												<% } else { %>
+													Processing
+													<% } %>
+														<% } %>
 								</td>
 								<td>
 									<%= arrayReservation[i].amount / 1000000000000000000 %>
@@ -133,7 +137,6 @@
 								<!-- <button class="btn btn-success" id="btnApprove">Approve</button>
 								<button class="btn btn-success" id="btnIncreaseAllowance">IncreaseAllowance</button> -->
 								<button class="btn btn-success" id="btnTransferFrom">Buy</button>
-								<button class="btn btn-success d-none" id="btnTransferFromCancel">Cancel</button>
 							</td>
 						</tr>
 					</tbody>
@@ -191,32 +194,32 @@
 						<tbody>
 							<% for (let i=0; i < arrayReservation.length; i++) { %>
 								<% if (arrayReservation[i].teacher=='0xdF40Fa9834bf5E080843DCB9a3dc5E60A707397D' ) { %>
-									<tr>
+									<tr data-id="<%= arrayReservation[i].id %>">
 										<td scope="row">
 											<%= arrayReservation[i].id %>
 										</td>
 										<td>
 											<% if (arrayReservation[i].fulfilled) { %>
 												<button class="btn btn-default btn-sm" disabled>Close</button>
-											<% } else { %>
-												<% if (arrayReservation[i].paid) { %>
-													<button class="btn btn-default btn-sm" disabled>Close</button>
 												<% } else { %>
-													<button class="btn btn-warning btn-sm btnTeacherConfirm"
-													data-id=<%=arrayReservation[i].id %>>Confirm</button>
-												<% } %>
-											<% } %>
+													<% if (arrayReservation[i].paid) { %>
+														<button class="btn btn-default btn-sm" disabled>Close</button>
+														<% } else { %>
+															<button class="btn btn-warning btn-sm btnTeacherConfirm"
+																data-id=<%=arrayReservation[i].id %>>Confirm</button>
+															<% } %>
+																<% } %>
 										</td>
 										<td>
 											<% if (arrayReservation[i].fulfilled) { %>
 												Done
-											<% } else { %>
-												<% if (arrayReservation[i].paid) { %>
-													Cancel
 												<% } else { %>
-													Processing
-												<% } %>
-											<% } %>
+													<% if (arrayReservation[i].paid) { %>
+														Cancel
+														<% } else { %>
+															Processing
+															<% } %>
+																<% } %>
 										</td>
 										<td>
 											<%= arrayReservation[i].amount / 1000000000000000000 %>
@@ -249,32 +252,32 @@
 						</thead>
 						<tbody>
 							<% for (let i=0; i < arrayReservation.length; i++) { %>
-								<tr>
+								<tr data-id="<%= arrayReservation[i].id %>">
 									<td scope="row">
 										<%= arrayReservation[i].id %>
 									</td>
 									<td>
 										<% if (arrayReservation[i].fulfilled) { %>
 											<button class="btn btn-default btn-sm" disabled>Close</button>
-										<% } else { %>
-											<% if (arrayReservation[i].paid) { %>
-												<button class="btn btn-default btn-sm" disabled>Close</button>
 											<% } else { %>
-												<button class="btn btn-danger btn-sm btnStudentCancel"
-												data-id=<%=arrayReservation[i].id %>>Cancel</button>
-											<% } %>
-										<% } %>
+												<% if (arrayReservation[i].paid) { %>
+													<button class="btn btn-default btn-sm" disabled>Close</button>
+													<% } else { %>
+														<button class="btn btn-danger btn-sm btnStudentCancel"
+															data-id=<%=arrayReservation[i].id %>>Cancel</button>
+														<% } %>
+															<% } %>
 									</td>
 									<td>
 										<% if (arrayReservation[i].fulfilled) { %>
 											Done
-										<% } else { %>
-											<% if (arrayReservation[i].paid) { %>
-												Cancel
 											<% } else { %>
-												Processing
-											<% } %>
-										<% } %>
+												<% if (arrayReservation[i].paid) { %>
+													Cancel
+													<% } else { %>
+														Processing
+														<% } %>
+															<% } %>
 									</td>
 									<td>
 										<%= arrayReservation[i].amount / 1000000000000000000 %>
@@ -286,7 +289,7 @@
 										<%= arrayReservation[i].teacher %>
 									</td>
 								</tr>
-							<% } %>
+								<% } %>
 
 						</tbody>
 					</table>
@@ -304,6 +307,10 @@
 		var buttonTeacherConfirm = document.createElement("button");
 		buttonTeacherConfirm.classList.add('btn', 'btn-warning', 'btn-sm', 'btnTeacherConfirm');
 		buttonTeacherConfirm.innerHTML = "Confirm";
+
+		var buttonStudentCancel = document.createElement("button");
+		buttonStudentCancel.classList.add('btn', 'btn-danger', 'btn-sm', 'btnStudentCancel');
+		buttonStudentCancel.innerHTML = "Cancel";
 		// Init - Check connected wallet
 		Pusher.logToConsole = true;
 		var pusher = new Pusher('cf2d8ddd49b9307e093e', {
@@ -321,13 +328,13 @@
 						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Teacher)`; // Add address wallet to element
 						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
 						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
-						document.getElementById('listCourseShow').classList.add('d-none'); 
-						document.getElementById('tblListTransactionStudent').classList.add('d-none'); 
+						document.getElementById('listCourseShow').classList.add('d-none');
+						document.getElementById('tblListTransactionStudent').classList.add('d-none');
 					} else { // account 2: student
 						document.getElementById('addressWallet').innerHTML = `Wallet Address: ${accounts} (Student)`; // Add address wallet to element
 						document.getElementById('areaInfoToken').classList.remove("d-none"); // Show info token
 						document.getElementById('inputAddressWallet').value = accounts; // Add address wallet to input form
-						document.getElementById('tblListTransactionTeacher').classList.add('d-none'); 
+						document.getElementById('tblListTransactionTeacher').classList.add('d-none');
 					}
 					addressAccount = accounts;
 
@@ -397,6 +404,7 @@
 
 							// Tạo một hàng mới
 							const newRow = document.createElement('tr');
+							newRow.setAttribute('data-id', data.reId);
 
 							// Tạo các ô trong hàng mới buttonTeacherConfirm
 							const cell1 = document.createElement('td');
@@ -425,20 +433,6 @@
 							const tbody = table.querySelector('tbody');
 							tbody.appendChild(newRow);
 
-							// document.getElementById('transactionTokenTeacher').innerHTML = '';
-							// document.getElementById('transactionTokenTeacher').innerHTML = `
-							// 		<h4>Transaction</h4>
-							// 		<p>A transaction is in progress</p>
-							// 		<ul>
-							// 			<li>Name course: <span>Javascript video basic</span></li>
-							// 			<li>Buyer: <span>account 2</span></li>
-							// 			<li>Recevier: <span>account 3</span></li>
-							// 			<li>Total: <span>10000 TRT (You receive: 7000 TRT) (30% fee)</span></li>
-							// 			<li>Status: <span class="badge bg-primary">${data.status}</span></li>
-							// 		</ul>
-							// 		<button class="btn btn-warning" id="btnTeacherConfirm">Confirm</button>
-							// 	`;
-							// document.getElementById('transactionTokenTeacher').appendChild(buttonTeacherConfirm);
 						} else { //student
 
 						}
@@ -500,6 +494,88 @@
 								}
 							}
 
+						}
+
+					});
+
+					var channelCancelCourse = pusher.subscribe(`cancel-course-channel-${accounts}`);
+					channelCancelCourse.bind(`cancel-course-event-${accounts}`, function (data) {
+						console.log(data);
+						if (accounts == '0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087') { // root
+							Toastify({
+								text: `${data.message}`,
+								duration: 2000,
+								newWindow: true,
+								gravity: "top", // `top` or `bottom`
+								position: "right", // `left`, `center` or `right`
+								stopOnFocus: true, // Prevents dismissing of toast on hover
+								style: {
+									background: "#00b09b",
+								},
+								onClick: function () { } // Callback after click
+							}).showToast();
+
+
+							// Lấy thẻ <table> đầu tiên trên trang (hoặc thay bằng phương thức khác để chọn bảng cụ thể)
+							const table = document.getElementById('tblListTransaction');
+
+							// Lấy danh sách các thẻ <tr> trong bảng
+							const rows = table.getElementsByTagName('tr');
+
+							// Lặp qua từng thẻ <tr>
+							for (let i = 1; i <= rows.length; i++) {
+								const row = rows[i];
+
+								// Lấy giá trị của thuộc tính "attributeName" của thẻ <tr>
+								const attrValue = row.getAttribute('data-id');
+								console.log('attrValue: ', attrValue);
+
+								if (attrValue == data.reservationId) {
+									const td1 = row.getElementsByTagName('td')[1];
+									td1.innerHTML = 'Cancel';
+								}
+							}
+
+						} else if (accounts == '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d') { //teacher
+							Toastify({
+								text: `${data.message}`,
+								duration: 2000,
+								newWindow: true,
+								gravity: "top", // `top` or `bottom`
+								position: "right", // `left`, `center` or `right`
+								stopOnFocus: true, // Prevents dismissing of toast on hover
+								style: {
+									background: "#00b09b",
+								},
+								onClick: function () { } // Callback after click
+							}).showToast();
+
+							// Lấy thẻ <table> đầu tiên trên trang (hoặc thay bằng phương thức khác để chọn bảng cụ thể)
+							const tableTeacher = document.getElementById('tblListTransactionTeacher');
+
+							// Lấy danh sách các thẻ <tr> trong bảng
+							const rowsTeacher = tableTeacher.getElementsByTagName('tr');
+
+							// Lặp qua từng thẻ <tr>
+							for (let i = 1; i <= rowsTeacher.length; i++) {
+								const rowTeacher = rowsTeacher[i];
+
+								// Lấy giá trị của thuộc tính "attributeName" của thẻ <tr>
+								const attrValueTeacher = rowTeacher.getAttribute('data-id');
+								console.log('attrValueTeacher: ', attrValueTeacher);
+
+								if (attrValueTeacher == data.reservationId) {
+									const td2 = rowTeacher.getElementsByTagName('td')[2];
+									td2.innerHTML = 'Cancel';
+
+									const td1 = rowTeacher.getElementsByTagName('td')[1];
+									const button = td1.getElementsByTagName('button')[0];
+									button.classList.remove('btn-warning');
+									button.classList.add('btn-default');
+									button.innerHTML = 'Close';
+									button.disabled = true;
+								}
+							}
 						}
 
 					});
@@ -664,7 +740,7 @@
 		// Button click event (transferfrom)
 		const getBtnTransferFrom = document.getElementById('btnTransferFrom');
 		getBtnTransferFrom.addEventListener('click', () => {
-			document.getElementById('btnTransferFrom').innerHTML = 'Processing...'
+			document.getElementById('btnTransferFrom').innerHTML = 'Processing...';
 			const params = {
 				teacher: '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d',
 				student: addressAccount,
@@ -691,8 +767,44 @@
 							},
 							onClick: function () { } // Callback after click
 						}).showToast();
-						document.getElementById('btnTransferFrom').classList.add("d-none");
-						document.getElementById('btnTransferFromCancel').classList.remove("d-none");
+						document.getElementById('btnTransferFrom').innerHTML = 'Buy';
+
+
+						// Lấy bảng từ DOM
+						const table = document.getElementById('tblListTransactionStudent');
+
+						// Tạo một hàng mới
+						const newRow = document.createElement('tr');
+						newRow.setAttribute('data-id', data.reservationId);
+
+						// Tạo các ô trong hàng mới buttonStudentCancel
+						const cell1 = document.createElement('td');
+						cell1.textContent = data.reservationId;
+						const cell2 = document.createElement('td');
+						buttonStudentCancel.setAttribute('data-id', data.reservationId);
+						cell2.appendChild(buttonStudentCancel)
+						const cell3 = document.createElement('td');
+						cell3.textContent = data.status;
+						const cell4 = document.createElement('td');
+						cell4.textContent = data.amount;
+						const cell5 = document.createElement('td');
+						cell5.textContent = data.fromAddress;
+						const cell6 = document.createElement('td');
+						cell6.textContent = data.toAddress;
+
+						// Gắn các ô vào hàng mới
+						newRow.appendChild(cell1);
+						newRow.appendChild(cell2);
+						newRow.appendChild(cell3);
+						newRow.appendChild(cell4);
+						newRow.appendChild(cell5);
+						newRow.appendChild(cell6);
+
+						// Gắn hàng mới vào tbody của bảng
+						const tbody = table.querySelector('tbody');
+						tbody.appendChild(newRow);
+
+
 					}
 				})
 				.catch(error => {
@@ -794,8 +906,53 @@
 			});
 		});
 
+		// Button click event (buttonStudentCancel) when realtime
+		buttonStudentCancel.addEventListener("click", function () {
+			const itemId = buttonStudentCancel.getAttribute('data-id');
+			console.log('Item clicked function 1:', itemId);
+			buttonStudentCancel.innerHTML = 'Processing...';
+			buttonStudentCancel.disabled = true;
+			const params = {
+				reservationId: itemId,
+			};
 
-		// btnStudentCancel
+			axios.post('http://localhost:3000/cancel-reservation', params)
+				.then(response => {
+					const data = response.data;
+					console.log(data);
+					if (data.status) {
+						Toastify({
+							text: `Refund token success, please check wallet`,
+							duration: 2000,
+							newWindow: true,
+							gravity: "top", // `top` or `bottom`
+							position: "right", // `left`, `center` or `right`
+							stopOnFocus: true, // Prevents dismissing of toast on hover
+							style: {
+								background: "#00b09b",
+							},
+							onClick: function () { } // Callback after click
+						}).showToast();
+						buttonStudentCancel.classList.remove('btn-danger');
+						buttonStudentCancel.classList.add('btn-default');
+						buttonStudentCancel.innerHTML = 'Close';
+
+						// Get the parent td of the clicked item
+						const td = buttonStudentCancel.parentNode;
+						const row = td.parentNode;
+
+						// Get the second <td> element within the row (index 1) and modify its text
+						const td2 = row.getElementsByTagName('td')[2];
+						td2.innerHTML = 'Cancel';
+					}
+				})
+				.catch(error => {
+					console.log('error transfer');
+				});
+		});
+
+
+		// btnStudentCancel buttonStudentCancel
 		const btnStudentCancel = document.getElementsByClassName('btnStudentCancel');
 		Array.from(btnStudentCancel).forEach(item => {
 			item.addEventListener('click', () => {

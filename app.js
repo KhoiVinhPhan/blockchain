@@ -112,7 +112,7 @@ app.get('/', async function (req, res) {
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
     let arrayReservation = [];
-    for (let i = 1; i <= await contract.methods.reservationCounter().call(); i++) {
+    for (let i = 10; i <= await contract.methods.reservationCounter().call(); i++) {
         let reservation = await contract.methods.reservations(i).call();
         arrayReservation.push(reservation);
     }
@@ -639,7 +639,15 @@ app.post('/create-reservation', async (req, res) => {
                                 .catch((error) => {
                                     console.log('Error');
                                 });
-                            res.status(200).json({ status: true, reservationId: events[0].returnValues.id });
+                                
+                            res.status(200).json({ 
+                                status: true, 
+                                reservationId: events[0].returnValues.id,
+                                status: 'Processing',
+                                amount: amountFormat,
+                                fromAddress: student,
+                                toAddress: teacher
+                            });
                         })
                         .catch((error) => {
                             console.error('Error:', error);
@@ -709,8 +717,10 @@ app.post('/fulfill-reservation', async (req, res) => {
 })
 
 app.post('/cancel-reservation', async (req, res) => {
-    // reservation id
+    // address teacher
+    const teacher = '0xdf40fa9834bf5e080843dcb9a3dc5e60a707397d';
 
+    // reservation id
     const reservationId = req.body.reservationId;
 
     // Khởi tạo phương thức canCelReservation
@@ -739,7 +749,19 @@ app.post('/cancel-reservation', async (req, res) => {
                     console.log('canCelReservation transaction receipt:', reservationReceipt);
                     //Notification root
                     pusher.trigger(`cancel-course-channel-${rootAddressWallet}`, `cancel-course-event-${rootAddressWallet}`, {
-                        message: `Reservation Id: ${reservationId} : done`,
+                        message: `Reservation Id: ${reservationId} : Cancel`,
+                        status: 'Done',
+                        reservationId: reservationId
+                    })
+                        .then(() => {
+                            console.log('Pusher event triggered successfully');
+                        })
+                        .catch((error) => {
+                            console.log('Error');
+                        });
+                    //Notification teacher
+                    pusher.trigger(`cancel-course-channel-${teacher}`, `cancel-course-event-${teacher}`, {
+                        message: `Reservation Id: ${reservationId} : Cancel`,
                         status: 'Done',
                         reservationId: reservationId
                     })
