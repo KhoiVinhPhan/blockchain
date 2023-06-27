@@ -65,6 +65,8 @@ contract Token is IERC20 {
         address student;
         uint256 date;
         uint256 amount;
+        uint256 amountForAdmin;
+        uint256 amountForTeacher;
         bool paid;
         bool fulfilled;
     }
@@ -76,17 +78,17 @@ contract Token is IERC20 {
 
     constructor(string memory initMessage) {
         message = initMessage;
-        name = "Tora Tech version 9";
-        symbol = "TTT";
+        name = "Tora Tech version 10";
+        symbol = "KKK";
         decimals = 18;
         _totalSupply = 1000000 * 10**uint256(decimals);
         _balances[msg.sender] = _totalSupply;
     }
 
-    function createReservation(address teacher, address student, uint256 amount, uint256 date) external payable returns(uint256) {
+    function createReservation(address teacher, address student, uint256 amount, uint256 amountForAdmin, uint256 amountForTeacher, uint256 date) external payable returns(uint256) {
         require(amount > 0, "Gia tri phai lon hon 0");
         reservationCounter++;
-        reservations[reservationCounter] = Reservation(reservationCounter, msg.sender, teacher, student, date, amount, false, false); // create 1 Reservation vào reservations
+        reservations[reservationCounter] = Reservation(reservationCounter, msg.sender, teacher, student, date, amount, amountForAdmin, amountForTeacher, false, false); // create 1 Reservation vào reservations
         _balances[student] -= amount; // tru token cua student
         emit ReservationCreated(reservationCounter, msg.sender, teacher, student, date, amount);
         return reservationCounter;
@@ -97,7 +99,8 @@ contract Token is IERC20 {
         require(!reservation.fulfilled, "fulfill da duoc thuc hien");
 
         reservation.fulfilled = true;
-        _balances[reservation.teacher] += reservation.amount; // transfer token for teacher
+        _balances[reservation.teacher] += reservation.amountForTeacher; // transfer token for teacher
+        _balances[reservation.admin] += reservation.amountForAdmin; // transfer token for admin
         return true;
     }
 

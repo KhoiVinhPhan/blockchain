@@ -11,7 +11,7 @@ const Tx = require('ethereumjs-tx').Transaction;
 const MyContract = require("./artifacts/contracts/Token.sol/Token.json");``
 const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
-const contractAddress = '0x06Dad856AdBB0cc0bfa4612d921A9446293302BE'; // Enter your contract address here
+const contractAddress = '0x9Cb32A11E043b93308DF943467C25b9ACdeB5D75'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
 const rootAddressWallet = "0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087"; // Address wallet account root(tora)
 const privateKey = '52da2c4e7ad4c58cd693f5e9f4aa6408d388529365c08514203ae446e0e23384'; // private key of account root (tora)
@@ -112,7 +112,7 @@ app.get('/', async function (req, res) {
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
     let arrayReservation = [];
-    for (let i = 10; i <= await contract.methods.reservationCounter().call(); i++) {
+    for (let i = 3; i <= await contract.methods.reservationCounter().call(); i++) {
         let reservation = await contract.methods.reservations(i).call();
         arrayReservation.push(reservation);
     }
@@ -554,13 +554,15 @@ app.post('/create-reservation', async (req, res) => {
 
     // Số lượng token
     const amount = web3.utils.toHex(web3.utils.toWei('10000'));
+    const amountForAdmin = web3.utils.toHex(web3.utils.toWei('3000'));
+    const amountForTeacher = web3.utils.toHex(web3.utils.toWei('7000'));
     const amountFormat = '10000';
 
     // date
     const date = 123456789;
 
     // Khởi tạo phương thức buyCourse
-    const createReservationMethod = contract.methods.createReservation(teacher, student, amount, date);
+    const createReservationMethod = contract.methods.createReservation(teacher, student, amount, amountForAdmin, amountForTeacher, date);
 
     // Tạo đối tượng giao dịch createReservation
     const createReservationTxObject = {
@@ -639,7 +641,7 @@ app.post('/create-reservation', async (req, res) => {
                                 .catch((error) => {
                                     console.log('Error');
                                 });
-                                
+
                             res.status(200).json({ 
                                 status: true, 
                                 reservationId: events[0].returnValues.id,
