@@ -112,7 +112,7 @@ app.get('/', async function (req, res) {
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
     let arrayReservation = [];
-    for (let i = 3; i <= await contract.methods.reservationCounter().call(); i++) {
+    for (let i = 1; i <= await contract.methods.reservationCounter().call(); i++) {
         let reservation = await contract.methods.reservations(i).call();
         arrayReservation.push(reservation);
     }
