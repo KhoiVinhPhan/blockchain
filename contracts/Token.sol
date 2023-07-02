@@ -57,6 +57,7 @@ contract Token is IERC20 {
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
     string public message;
+    uint256 public exchangeRate;
 
     struct Reservation {
         uint256 id;
@@ -75,14 +76,16 @@ contract Token is IERC20 {
     uint256 public reservationCounter;
 
     event ReservationCreated(uint256 id, address admin, address teacher, address student, uint256 date, uint256 amount);
+    event TokensPurchased(address sender, address buyer, uint amount);
 
     constructor(string memory initMessage) {
         message = initMessage;
-        name = "Tora Tech version 10";
-        symbol = "KKK";
+        name = "Tora Tech version 11";
+        symbol = "TRT";
         decimals = 18;
         _totalSupply = 1000000 * 10**uint256(decimals);
         _balances[msg.sender] = _totalSupply;
+        exchangeRate = 10000;
     }
 
     function createReservation(address teacher, address student, uint256 amount, uint256 amountForAdmin, uint256 amountForTeacher, uint256 date) external payable returns(uint256) {
@@ -110,6 +113,15 @@ contract Token is IERC20 {
 
         reservation.paid = true;
         _balances[reservation.student] += reservation.amount; // refund token for student
+        return true;
+    }
+
+    function buyTokenETH(address account) external payable returns(bool) {
+        uint tokenAmount = msg.value * exchangeRate;
+        require(balanceOf(msg.sender) >= tokenAmount, "Insufficient tokens in the contract");
+        
+        transfer(account, tokenAmount);
+        emit TokensPurchased(msg.sender, account, tokenAmount);
         return true;
     }
 

@@ -112,6 +112,10 @@
 					<button class="btn btn-primary" id="reservationCounter">Reservation Counter</button>
 					<span id="reservationCounterShow"></span>
 				</div>
+				<div class="mb-1">
+					<button class="btn btn-primary" id="buyTokenWithETH">Buy Token with ETH</button>
+					<span id="buyTokenWithETHShow"></span>
+				</div>
 
 			</div>
 
@@ -731,6 +735,41 @@
 				.then(response => {
 					const data = response.data;
 					console.log(data);
+				})
+				.catch(error => {
+					console.error(error);
+				});
+		});
+
+		// Button click event (buy token)
+		const btnBuyTokenWithETH = document.getElementById('buyTokenWithETH');
+		btnBuyTokenWithETH.addEventListener('click', () => {
+			document.getElementById('buyTokenWithETH').innerHTML = 'Processing...';
+			document.getElementById('buyTokenWithETH').disabled = true;
+			const params = {
+				accountBuy: addressAccount
+			};
+
+			axios.post('http://localhost:3000/buy-token-with-eth', params)
+				.then(response => {
+					const data = response.data;
+					console.log(data);
+					if (data.status) {
+						Toastify({
+							text: `Buy token TRT with ETH success`,
+							duration: 2000,
+							newWindow: true,
+							gravity: "top", // `top` or `bottom`
+							position: "right", // `left`, `center` or `right`
+							stopOnFocus: true, // Prevents dismissing of toast on hover
+							style: {
+								background: "#00b09b",
+							},
+							onClick: function () { } // Callback after click
+						}).showToast();
+						document.getElementById('buyTokenWithETH').innerHTML = 'Buy Token with ETH';
+						document.getElementById('buyTokenWithETH').disabled = false;
+					}
 				})
 				.catch(error => {
 					console.error(error);

@@ -8,10 +8,10 @@ const Pusher = require("pusher");
 const Tx = require('ethereumjs-tx').Transaction;
 
 // Smart contract
-const MyContract = require("./artifacts/contracts/Token.sol/Token.json");``
+const MyContract = require("./artifacts/contracts/Token.sol/Token.json"); ``
 const { isAddress } = require('ethers/lib/utils');
 const contractABI = MyContract.abi;
-const contractAddress = '0x9Cb32A11E043b93308DF943467C25b9ACdeB5D75'; // Enter your contract address here
+const contractAddress = '0x3Da20CA5602E19A94c6d24b9739EB6703258265f'; // Enter your contract address here
 const rpcEndpoint = 'https://eth-sepolia.g.alchemy.com/v2/9APS8dPCAa3RSWBuCENXYM-cCUhFevBr'; // url listen 
 const rootAddressWallet = "0xa9c682a9f1c6de6e09fac43dcfecc6fcc41c4087"; // Address wallet account root(tora)
 const privateKey = '52da2c4e7ad4c58cd693f5e9f4aa6408d388529365c08514203ae446e0e23384'; // private key of account root (tora)
@@ -112,7 +112,7 @@ app.get('/', async function (req, res) {
     const pageTitle = 'TRT (Tora tech)';
     const currentDate = new Date().toDateString();
     let arrayReservation = [];
-    for (let i = 1; i <= await contract.methods.reservationCounter().call(); i++) {
+    for (let i = 8; i <= await contract.methods.reservationCounter().call(); i++) {
         let reservation = await contract.methods.reservations(i).call();
         arrayReservation.push(reservation);
     }
@@ -642,8 +642,8 @@ app.post('/create-reservation', async (req, res) => {
                                     console.log('Error');
                                 });
 
-                            res.status(200).json({ 
-                                status: true, 
+                            res.status(200).json({
+                                status: true,
                                 reservationId: events[0].returnValues.id,
                                 status: 'Processing',
                                 amount: amountFormat,
@@ -706,7 +706,7 @@ app.post('/fulfill-reservation', async (req, res) => {
                         .catch((error) => {
                             console.log('Error');
                         });
-                    res.status(200).json({ status: true});
+                    res.status(200).json({ status: true });
                 })
                 .on('error', (error) => {
                     console.error('createReservation transaction error:', error);
@@ -714,6 +714,53 @@ app.post('/fulfill-reservation', async (req, res) => {
         })
         .catch((error) => {
             console.error('Sign createReservation transaction error:', error);
+        });
+
+})
+
+app.post('/buy-token-with-eth', async (req, res) => {
+
+    //params
+    const accountBuy = '0x35755b2c2e2b97061f3401185a2ed55960eb4b6d';
+
+    // Khởi tạo phương thức buyTokenETH
+    const buyTokenETHMethod = contract.methods.buyTokenETH(accountBuy);
+    //const nonce = await web3.eth.getTransactionCount(accountBuy);
+
+    const account = web3.eth.accounts.privateKeyToAccount(privateKey);
+    const balance = await web3.eth.getBalance('0x35755b2c2e2b97061f3401185a2ed55960eb4b6d');
+    console.log('Số dư hiện tại:', web3.utils.fromWei(balance, 'ether'), 'ETH');
+
+    // Tạo đối tượng giao dịch buyTokenETH
+    const buyTokenETHTxObject = {
+        from: accountBuy,
+        to: rootAddressWallet,
+        gasLimit: web3.utils.toHex(500000),
+        gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
+        // data: buyTokenETHMethod.encodeABI(),
+        value: web3.utils.toHex(web3.utils.toWei('0.1', 'ether')), // Convert ETH amount to wei
+    };
+
+    // Ký giao dịch buyTokenETH
+    console.log('Ký giao dịch buyTokenETH');
+    web3.eth.accounts.signTransaction(buyTokenETHTxObject, privateKey)
+        .then((signedReservationTx) => {
+            // Gửi giao dịch buyTokenETH đã ký
+            console.log('Gửi giao dịch buyTokenETH đã ký');
+            web3.eth.sendSignedTransaction(signedReservationTx.rawTransaction)
+                .on('transactionHash', (reservationHash) => {
+                    console.log('buyTokenETH transaction hash:', reservationHash);
+                })
+                .on('receipt', (reservationReceipt) => {
+                    console.log('buyTokenETH transaction receipt:', reservationReceipt);
+                    res.status(200).json({ status: true});
+                })
+                .on('error', (error) => {
+                    console.error('buyTokenETH transaction error:', error);
+                });
+        })
+        .catch((error) => {
+            console.error('Sign buyTokenETH transaction error:', error);
         });
 
 })
@@ -773,7 +820,7 @@ app.post('/cancel-reservation', async (req, res) => {
                         .catch((error) => {
                             console.log('Error');
                         });
-                    res.status(200).json({ status: true});
+                    res.status(200).json({ status: true });
                 })
                 .on('error', (error) => {
                     console.error('canCelReservation transaction error:', error);
